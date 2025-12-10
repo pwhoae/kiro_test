@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photoshop 工具箱提示詞生成器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(45deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+        
+        .tool-selector {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+        }
+        
+        .tool-category {
+            margin-bottom: 25px;
+        }
+        
+        .category-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .tool-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        
+        .tool-item {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .tool-item:hover {
+            border-color: #3498db;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.2);
+        }
+        
+        .tool-item.selected {
+            border-color: #3498db;
+            background: #e3f2fd;
+        }
+        
+        .tool-icon {
+            font-size: 2em;
+            margin-bottom: 8px;
+        }
+        
+        .tool-name {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .output-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+        }
+        
+        .output-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        
+        .prompt-output {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 200px;
+            font-family: 'Courier New', monospace;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+        
+        .style-options {
+            margin-top: 20px;
+        }
+        
+        .style-option {
+            margin: 10px 0;
+        }
+        
+        .style-option label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .style-option input {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Photoshop 工具箱提示詞生成器</h1>
+            <p>為你的 PS 工具創建專業的功能描述和用戶提示</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="tool-selector">
+                <div class="tool-category">
+                    <div class="category-title">🔲 選取與剪裁工具</div>
+                    <div class="tool-grid">
+                        <div class="tool-item" data-tool="rectangle-select">
+                            <div class="tool-icon">⬜</div>
+                            <div class="tool-name">矩形選框工具</div>
+                        </div>
+                        <div class="tool-item" data-tool="quick-select">
+                            <div class="tool-icon">🎯</div>
+                            <div class="tool-name">快速選取工具</div>
+                        </div>
+                        <div class="tool-item" data-tool="lasso">
+                            <div class="tool-icon">🪢</div>
+                            <div class="tool-name">套索工具</div>
+                        </div>
+                        <div class="tool-item" data-tool="magic-wand">
+                            <div class="tool-icon">🪄</div>
+                            <div class="tool-name">魔棒工具</div>
+                        </div>
+                        <div class="tool-item" data-tool="crop">
+                            <div class="tool-icon">✂️</div>
+                            <div class="tool-name">裁剪工具</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tool-category">
+                    <div class="category-title">🎨 繪畫與填充工具</div>
+                    <div class="tool-grid">
+                        <div class="tool-item" data-tool="brush">
+                            <div class="tool-icon">🖌️</div>
+                            <div class="tool-name">畫筆工具</div>
+                        </div>
+                        <div class="tool-item" data-tool="pencil">
+                            <div class="tool-icon">✏️</div>
+                            <div class="tool-name">鉛筆工具</div>
+                        </div>
+                        <div class="tool-item" data-tool="bucket">
+                            <div class="tool-icon">🪣</div>
+                            <div class="tool-name">油漆桶工具</div>
+                        </div>
+                        <div class="tool-item" data-tool="gradient">
+                            <div class="tool-icon">🌈</div>
+                            <div class="tool-name">漸變工具</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tool-category">
+                    <div class="category-title">🔧 修圖與調整工具</div>
+                    <div class="tool-grid">
+                        <div class="tool-item" data-tool="spot-healing">
+                            <div class="tool-icon">🩹</div>
+                            <div class="tool-name">污點修復畫筆</div>
+                        </div>
+                        <div class="tool-item" data-tool="healing-brush">
+                            <div class="tool-icon">🖌️</div>
+                            <div class="tool-name">修復畫筆工具</div>
+                        </div>
+                        <div class="tool-item" data-tool="clone-stamp">
+                            <div class="tool-icon">📋</div>
+                            <div class="tool-name">克隆圖章工具</div>
+                        </div>
+                        <div class="tool-item" data-tool="blur">
+                            <div class="tool-icon">🌫️</div>
+                            <div class="tool-name">模糊工具</div>
+                        </div>
+                        <div class="tool-item" data-tool="sharpen">
+                            <div class="tool-icon">🔍</div>
+                            <div class="tool-name">銳化工具</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="output-section">
+                <div class="output-title">📝 生成的提示詞</div>
+                <div class="prompt-output" id="promptOutput">
+點擊左側工具來生成對應的提示詞...
+                </div>
+                
+                <div class="style-options">
+                    <div class="style-option">
+                        <label>
+                            <input type="radio" name="style" value="simple" checked>
+                            簡潔風格 - 直接描述功能
+                        </label>
+                    </div>
+                    <div class="style-option">
+                        <label>
+                            <input type="radio" name="style" value="detailed">
+                            詳細風格 - 包含使用場景
+                        </label>
+                    </div>
+                    <div class="style-option">
+                        <label>
+                            <input type="radio" name="style" value="creative">
+                            創意風格 - 強調藝術效果
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="copyToClipboard()">📋 複製提示詞</button>
+                    <button class="btn btn-secondary" onclick="generateAll()">🔄 生成全部工具</button>
+                    <button class="btn btn-secondary" onclick="exportToFile()">💾 匯出檔案</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const toolPrompts = {
+            'rectangle-select': {
+                simple: '矩形選框工具：精確選取矩形區域，輕鬆調整圖像內容。',
+                detailed: '矩形選框工具：創建精確的矩形選取範圍，適用於規整區域的選取和編輯。支援羽化邊緣，讓選取更自然。',
+                creative: '矩形選框工具：框住創意的起點，精準捕捉每個靈感瞬間，讓構圖更完美。'
+            },
+            'quick-select': {
+                simple: '快速選取工具：輕點或拖曳即可自動選取對象，節省時間。',
+                detailed: '快速選取工具：智能識別邊緣，自動選取相似區域。配合調整邊緣功能，輕鬆處理複雜背景。',
+                creative: '快速選取工具：一觸即達的魔法選取，讓複雜的摳圖變得簡單優雅。'
+            },
+            'lasso': {
+                simple: '套索工具：手動勾勒不規則選取範圍，控制每個細節。',
+                detailed: '套索工具：自由繪製選取路徑，適合不規則形狀的精確選取。包含多邊形套索和磁性套索選項。',
+                creative: '套索工具：用手繪的溫度勾勒選取邊界，每一筆都是對細節的堅持。'
+            },
+            'magic-wand': {
+                simple: '魔棒工具：根據顏色範圍快速選取相似區域。',
+                detailed: '魔棒工具：基於顏色相似度自動選取區域，可調整容差值控制選取範圍的精確度。',
+                creative: '魔棒工具：色彩的魔法師，一點即選，讓相似色調瞬間聚集。'
+            },
+            'crop': {
+                simple: '裁剪工具：調整尺寸與構圖，創建完美畫布。',
+                detailed: '裁剪工具：重新構圖和調整畫布尺寸，支援比例鎖定和透視校正，讓構圖更專業。',
+                creative: '裁剪工具：重新定義視覺邊界，在方寸之間發現無限可能。'
+            },
+            'brush': {
+                simple: '畫筆工具：選擇筆刷樣式，自由繪製藝術效果。',
+                detailed: '畫筆工具：豐富的筆刷預設和自定義選項，支援壓感和傾斜度，創造自然的繪畫體驗。',
+                creative: '畫筆工具：數位畫布上的詩人之筆，每一筆觸都承載著創作者的靈魂。'
+            },
+            'pencil': {
+                simple: '鉛筆工具：繪製精細細節的尖銳線條。',
+                detailed: '鉛筆工具：創建銳利的像素級線條，適合精密繪圖和像素藝術創作。',
+                creative: '鉛筆工具：像素世界的精密工匠，在數位空間中刻畫最純粹的線條。'
+            },
+            'bucket': {
+                simple: '油漆桶工具：快速填充顏色，適用於大面積區域。',
+                detailed: '油漆桶工具：基於顏色相似度填充區域，可調整容差和填充模式，高效處理大面積著色。',
+                creative: '油漆桶工具：色彩的洪流，一觸即發，讓單調的區域瞬間綻放生命力。'
+            },
+            'gradient': {
+                simple: '漸變工具：創造平滑的顏色過渡，增強視覺效果。',
+                detailed: '漸變工具：多種漸變樣式和混合模式，創建從簡單到複雜的顏色過渡效果。',
+                creative: '漸變工具：色彩的詩意流淌，在光影交織中編織視覺的夢境。'
+            },
+            'spot-healing': {
+                simple: '污點修復畫筆工具：一鍵去除污點或小瑕疵，讓照片更完美。',
+                detailed: '污點修復畫筆工具：智能分析周圍像素，自動修復小瑕疵和污點，操作簡單效果自然。',
+                creative: '污點修復畫筆工具：時光的橡皮擦，輕撫過往，讓每個瞬間都回歸最美的模樣。'
+            },
+            'healing-brush': {
+                simple: '修復畫筆工具：融合周圍像素，修復複雜區域。',
+                detailed: '修復畫筆工具：手動選擇取樣點，精確修復複雜瑕疵，保持原有紋理和光影。',
+                creative: '修復畫筆工具：像素的治療師，用周圍的美好修復每一處不完美。'
+            },
+            'clone-stamp': {
+                simple: '克隆圖章工具：複製選定區域內容，實現高精度修復。',
+                detailed: '克隆圖章工具：精確複製像素內容到目標區域，支援對齊模式和混合選項。',
+                creative: '克隆圖章工具：像素的複製大師，在時空中穿梭，讓美好無限延續。'
+            },
+            'blur': {
+                simple: '模糊工具：柔化邊緣或減輕細節，增添藝術效果。',
+                detailed: '模糊工具：局部模糊處理，可調整強度和筆刷大小，創造景深和柔焦效果。',
+                creative: '模糊工具：夢境的編織者，在清晰與朦朧間創造詩意的視覺語言。'
+            },
+            'sharpen': {
+                simple: '銳化工具：強化圖像邊緣與細節，使畫面更清晰。',
+                detailed: '銳化工具：增強局部對比度和邊緣清晰度，讓重要細節更加突出。',
+                creative: '銳化工具：細節的雕刻師，讓每個像素都散發出鑽石般的光芒。'
+            }
+        };
+
+        let selectedTools = [];
+        let currentStyle = 'simple';
+
+        // 工具選擇事件
+        document.querySelectorAll('.tool-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const toolId = this.dataset.tool;
+                
+                if (this.classList.contains('selected')) {
+                    this.classList.remove('selected');
+                    selectedTools = selectedTools.filter(t => t !== toolId);
+                } else {
+                    this.classList.add('selected');
+                    selectedTools.push(toolId);
+                }
+                
+                updatePromptOutput();
+            });
+        });
+
+        // 風格選擇事件
+        document.querySelectorAll('input[name="style"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                currentStyle = this.value;
+                updatePromptOutput();
+            });
+        });
+
+        function updatePromptOutput() {
+            const output = document.getElementById('promptOutput');
+            
+            if (selectedTools.length === 0) {
+                output.textContent = '點擊左側工具來生成對應的提示詞...';
+                return;
+            }
+            
+            let promptText = '';
+            selectedTools.forEach(toolId => {
+                if (toolPrompts[toolId]) {
+                    promptText += toolPrompts[toolId][currentStyle] + '\n\n';
+                }
+            });
+            
+            output.textContent = promptText.trim();
+        }
+
+        function copyToClipboard() {
+            const output = document.getElementById('promptOutput');
+            const text = output.textContent;
+            
+            if (text && text !== '點擊左側工具來生成對應的提示詞...') {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('提示詞已複製到剪貼板！');
+                });
+            } else {
+                alert('請先選擇工具生成提示詞！');
+            }
+        }
+
+        function generateAll() {
+            // 選擇所有工具
+            document.querySelectorAll('.tool-item').forEach(item => {
+                item.classList.add('selected');
+            });
+            
+            selectedTools = Object.keys(toolPrompts);
+            updatePromptOutput();
+        }
+
+        function exportToFile() {
+            const output = document.getElementById('promptOutput');
+            const text = output.textContent;
+            
+            if (text && text !== '點擊左側工具來生成對應的提示詞...') {
+                const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'photoshop-tool-prompts.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } else {
+                alert('請先選擇工具生成提示詞！');
+            }
+        }
+    </script>
+</body>
+</html>
