@@ -180,12 +180,11 @@ class App {
         this.filteredEntries = [];
         this.expandedCardId = null;
         this.searchQuery = '';
-        this.startDate = null;
-        this.endDate = null;
-        this.keywordFilter = '';
+        this.activeKeywordFilter = '';
         this.selectedFile = null;
         this.suggestionIndex = -1;
         this.suggestions = [];
+        this.keywordColors = this.loadKeywordColors();
         
         this.init();
     }
@@ -200,6 +199,47 @@ class App {
         
         // Render initial state
         this.render();
+    }
+
+    loadKeywordColors() {
+        try {
+            const colors = localStorage.getItem('keyword-colors');
+            return colors ? JSON.parse(colors) : {};
+        } catch (error) {
+            return {};
+        }
+    }
+
+    saveKeywordColors() {
+        try {
+            localStorage.setItem('keyword-colors', JSON.stringify(this.keywordColors));
+        } catch (error) {
+            console.error('Error saving keyword colors:', error);
+        }
+    }
+
+    setKeywordColor(keyword, color) {
+        this.keywordColors[keyword.toLowerCase()] = color;
+        this.saveKeywordColors();
+        this.render();
+    }
+
+    getKeywordColor(keyword) {
+        return this.keywordColors[keyword.toLowerCase()] || '#e3f2fd';
+    }
+
+    getKeywordTextColor(bgColor) {
+        // Convert hex to RGB
+        const hex = bgColor.replace('#', '');
+        const r = parseInt(hex.substr(0, 2), 16);
+        const g = parseInt(hex.substr(2, 2), 16);
+        const b = parseInt(hex.substr(4, 2), 16);
+        
+        // Calculate luminance
+        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        
+        // Return black or white based on luminance
+        return luminance > 0.5 ? '#000000' : '#ffffff';
     }
 
     setupEventListeners() {
@@ -287,29 +327,15 @@ class App {
         });
 
         // Date filters
-        document.getElementById('startDate').addEventListener('change', (e) => {
-            this.startDate = e.target.value ? new Date(e.target.value) : null;
-            this.applyFilters();
-            this.render();
-        });
-
-        document.getElementById('endDate').addEventListener('change', (e) => {
-            this.endDate = e.target.value ? new Date(e.target.value) : null;
-            this.applyFilters();
-            this.render();
-        });
-
-        // Keyword filter
-        document.getElementById('keywordFilter').addEventListener('input', (e) => {
-            this.keywordFilter = e.target.value;
-            this.applyFilters();
-            this.render();
-        });
-
-        // Clear filters
-        document.getElementById('clearFilters').addEventListener('click', () => {
-            this.clearFilters();
-        });
+        const clearKeywordFilter = document.getElementById('clearKeywordFilter');
+        if (clearKeywordFilter) {
+            clearKeywordFilter.addEventListener('click', () => {
+                this.activeKeywordFilter = '';
+                this.updateActiveKeywordDisplay();
+                this.applyFilters();
+                this.render();
+            });
+        }
     }
 
     async readFileContent(file) {
@@ -450,8 +476,6 @@ class App {
             id: generateId(),
             keywords: extractKeywords(text),
             context: text,
-            label: this.selectedFile ? this.selectedFile.name : '',
-            function: '',
             timestamp: Date.now(),
             createdAt: new Date(),
             updatedAt: new Date()
@@ -480,25 +504,46 @@ class App {
         // Apply search
         filtered = searchEntries(filtered, this.searchQuery);
         
-        // Apply time filter
-        filtered = filterByTime(filtered, this.startDate, this.endDate);
-        
         // Apply keyword filter
-        filtered = filterByKeyword(filtered, this.keywordFilter);
+        if (this.activeKeywordFilter) {
+            filtered = filtered.filter(entry =>
+                entry.keywords.some(k => k.toLowerCase() === this.activeKeywordFilter.toLowerCase())
+            );
+        }
         
         this.filteredEntries = filtered;
     }
 
+    filterByKeyword(keyword) {
+        this.activeKeywordFilter = keyword;
+        this.updateActiveKeywordDisplay();
+        this.applyFilters();
+        this.render();
+    }
+
+    updateActiveKeywordDisplay() {
+        const activeKeywordSpan = document.getElementById('activeKeyword');
+        const clearButton = document.getElementById('clearKeywordFilter');
+        
+        if (this.activeKeywordFilter) {
+            activeKeywordSpan.textContent = this.activeKeywordFilter;
+            activeKeywordSpan.style.background = this.getKeywordColor(this.activeKeywordFilter);
+            activeKeywordSpan.style.color = this.getKeywordTextColor(this.getKeywordColor(this.activeKeywordFilter));
+            if (clearButton) clearButton.style.display = 'inline-block';
+        } else {
+            activeKeywordSpan.textContent = 'None';
+            activeKeywordSpan.style.background = '#e3f2fd';
+            activeKeywordSpan.style.color = '#1976d2';
+            if (clearButton) clearButton.style.display = 'none';
+        }
+    }
+
     clearFilters() {
         this.searchQuery = '';
-        this.startDate = null;
-        this.endDate = null;
-        this.keywordFilter = '';
+        this.activeKeywordFilter = '';
         
         document.getElementById('searchBox').value = '';
-        document.getElementById('startDate').value = '';
-        document.getElementById('endDate').value = '';
-        document.getElementById('keywordFilter').value = '';
+        this.updateActiveKeywordDisplay();
         
         this.applyFilters();
         this.render();
@@ -567,7 +612,25 @@ class App {
             </button>
             <div class="card-collapsed">
                 <div class="card-keywords">
-                    ${keywords.map(k => `<span class="keyword-tag">${k}</span>`).join('')}
+                    ${keywords.map(k => {
+                        const bgColor = this.getKeywordColor(k);
+                        const textColor = this.getKeywordTextColor(bgColor);
+                        return `
+                            <span class="keyword-tag" 
+                                  style="background: ${bgColor}; color: ${textColor};"
+                                  onclick="event.stopPropagation(); app.filterByKeyword('${k.replace(/'/g, "\\'")}')">
+                                <input type="color" 
+                                       class="keyword-color-input" 
+                                       id="color-${entry.id}-${k.replace(/[^a-zA-Z0-9]/g, '')}"
+                                       value="${bgColor}"
+                                       onchange="event.stopPropagation(); app.setKeywordColor('${k.replace(/'/g, "\\'")}', this.value)">
+                                <span class="keyword-color-picker" 
+                                      style="background: ${bgColor};"
+                                      onclick="event.stopPropagation(); document.getElementById('color-${entry.id}-${k.replace(/[^a-zA-Z0-9]/g, '')}').click()"></span>
+                                ${k}
+                            </span>
+                        `;
+                    }).join('')}
                     ${entry.keywords.length > 5 ? `<span class="keyword-tag">+${entry.keywords.length - 5} more</span>` : ''}
                 </div>
                 <div class="card-context truncated">
@@ -584,15 +647,28 @@ class App {
             </button>
             <div class="card-expanded">
                 <div class="card-field">
-                    <label>Label</label>
-                    <input type="text" id="label-${entry.id}" value="${entry.label || ''}" placeholder="Enter label...">
-                </div>
-                <div class="card-field">
-                    <label>Function/Category</label>
-                    <input type="text" id="function-${entry.id}" value="${entry.function || ''}" placeholder="Enter function...">
-                </div>
-                <div class="card-field">
                     <label>Keywords</label>
+                    <div class="card-keywords" style="margin-bottom: 10px;">
+                        ${entry.keywords.map(k => {
+                            const bgColor = this.getKeywordColor(k);
+                            const textColor = this.getKeywordTextColor(bgColor);
+                            return `
+                                <span class="keyword-tag" 
+                                      style="background: ${bgColor}; color: ${textColor};"
+                                      onclick="event.stopPropagation(); app.filterByKeyword('${k.replace(/'/g, "\\'")}')">
+                                    <input type="color" 
+                                           class="keyword-color-input" 
+                                           id="color-exp-${entry.id}-${k.replace(/[^a-zA-Z0-9]/g, '')}"
+                                           value="${bgColor}"
+                                           onchange="event.stopPropagation(); app.setKeywordColor('${k.replace(/'/g, "\\'")}', this.value)">
+                                    <span class="keyword-color-picker" 
+                                          style="background: ${bgColor};"
+                                          onclick="event.stopPropagation(); document.getElementById('color-exp-${entry.id}-${k.replace(/[^a-zA-Z0-9]/g, '')}').click()"></span>
+                                    ${k}
+                                </span>
+                            `;
+                        }).join('')}
+                    </div>
                     <input type="text" id="keywords-${entry.id}" value="${entry.keywords.join(', ')}" placeholder="Enter keywords...">
                 </div>
                 <div class="card-field">
@@ -612,8 +688,6 @@ class App {
     }
 
     saveCard(id) {
-        const label = document.getElementById(`label-${id}`).value;
-        const func = document.getElementById(`function-${id}`).value;
         const keywordsStr = document.getElementById(`keywords-${id}`).value;
         const context = document.getElementById(`context-${id}`).value;
         
@@ -623,8 +697,6 @@ class App {
             .filter(k => k.length > 0);
         
         this.handleSave(id, {
-            label,
-            function: func,
             keywords,
             context
         });

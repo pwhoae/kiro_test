@@ -42,16 +42,10 @@
         <!-- Filter Controls -->
         <div class="filter-controls">
             <div class="filter-group">
-                <label>Time Filter:</label>
-                <input type="date" id="startDate" class="date-input">
-                <span>to</span>
-                <input type="date" id="endDate" class="date-input">
+                <label>Active Keyword Filter:</label>
+                <span id="activeKeyword" class="active-keyword">None</span>
+                <button id="clearKeywordFilter" class="clear-keyword-filter" style="display: none;">✕ Clear</button>
             </div>
-            <div class="filter-group">
-                <label>Keyword Filter:</label>
-                <input type="text" id="keywordFilter" class="keyword-filter" placeholder="Filter by keyword...">
-            </div>
-            <button id="clearFilters" class="clear-filters">Clear Filters</button>
         </div>
 
         <!-- Card Grid -->

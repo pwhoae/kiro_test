@@ -205,26 +205,28 @@ body {
     color: #333;
 }
 
-.date-input,
-.keyword-filter {
-    padding: 8px 12px;
-    border: 2px solid #e0e0e0;
-    border-radius: 6px;
+.active-keyword {
+    padding: 8px 16px;
+    background: #e3f2fd;
+    color: #1976d2;
+    border-radius: 20px;
+    font-weight: 500;
     font-size: 14px;
 }
 
-.clear-filters {
-    padding: 8px 16px;
-    background: #f5f5f5;
+.clear-keyword-filter {
+    padding: 6px 12px;
+    background: #f44336;
+    color: white;
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 13px;
     transition: background 0.3s;
 }
 
-.clear-filters:hover {
-    background: #e0e0e0;
+.clear-keyword-filter:hover {
+    background: #d32f2f;
 }
 
 /* Card Grid */
@@ -298,6 +300,37 @@ body {
     border-radius: 12px;
     font-size: 12px;
     font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.keyword-tag:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.keyword-tag:active {
+    transform: translateY(0);
+}
+
+.keyword-color-picker {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid white;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.keyword-color-input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
 }
 
 .card-context {
