@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keyword Context Manager</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Fixed Header -->
+    <header class="header">
+        <div class="header-container">
+            <div class="search-container">
+                <input 
+                    type="text" 
+                    id="searchBox" 
+                    class="search-box" 
+                    placeholder="🔍 Search by keyword or context..."
+                    autocomplete="off"
+                >
+                <div id="searchSuggestions" class="search-suggestions"></div>
+            </div>
+            <input 
+                type="file" 
+                id="fileInput" 
+                class="file-input-hidden" 
+                accept=".txt,.md,.json,.js,.html,.css,.py,.java,.cpp,.c,.h"
+            >
+            <button id="fileButton" class="file-button">📁 Choose File</button>
+            <textarea 
+                id="textInput" 
+                class="text-input" 
+                placeholder="📝 Insert text..."
+                rows="1"
+            ></textarea>
+            <button id="addButton" class="add-button">➕ Add</button>
+        </div>
+    </header>
+
+    <!-- Scrollable Body -->
+    <main class="main-content">
+        <!-- Filter Controls -->
+        <div class="filter-controls">
+            <div class="filter-group">
+                <label>Time Filter:</label>
+                <input type="date" id="startDate" class="date-input">
+                <span>to</span>
+                <input type="date" id="endDate" class="date-input">
+            </div>
+            <div class="filter-group">
+                <label>Keyword Filter:</label>
+                <input type="text" id="keywordFilter" class="keyword-filter" placeholder="Filter by keyword...">
+            </div>
+            <button id="clearFilters" class="clear-filters">Clear Filters</button>
+        </div>
+
+        <!-- Card Grid -->
+        <div id="cardGrid" class="card-grid">
+            <!-- Cards will be dynamically inserted here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <p>No entries yet. Add your first entry above!</p>
+        </div>
+
+        <!-- No Results State -->
+        <div id="noResults" class="no-results" style="display: none;">
+            <p>No results found. Try adjusting your search or filters.</p>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>

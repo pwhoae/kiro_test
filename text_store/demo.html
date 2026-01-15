@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo - Keyword Context Manager</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <div class="search-container">
+                <input 
+                    type="text" 
+                    id="searchBox" 
+                    class="search-box" 
+                    placeholder="🔍 Search by keyword or context..."
+                    autocomplete="off"
+                >
+                <div id="searchSuggestions" class="search-suggestions"></div>
+            </div>
+            <input 
+                type="file" 
+                id="fileInput" 
+                class="file-input-hidden" 
+                accept=".txt,.md,.json,.js,.html,.css,.py,.java,.cpp,.c,.h"
+            >
+            <button id="fileButton" class="file-button">📁 Choose File</button>
+            <textarea 
+                id="textInput" 
+                class="text-input" 
+                placeholder="📝 Insert text..."
+                rows="1"
+            ></textarea>
+            <button id="addButton" class="add-button">➕ Add</button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="filter-controls">
+            <div class="filter-group">
+                <label>Time Filter:</label>
+                <input type="date" id="startDate" class="date-input">
+                <span>to</span>
+                <input type="date" id="endDate" class="date-input">
+            </div>
+            <div class="filter-group">
+                <label>Keyword Filter:</label>
+                <input type="text" id="keywordFilter" class="keyword-filter" placeholder="Filter by keyword...">
+            </div>
+            <button id="clearFilters" class="clear-filters">Clear Filters</button>
+            <button id="loadDemo" class="add-button" style="margin-left: auto;">Load Demo Data</button>
+        </div>
+
+        <div id="cardGrid" class="card-grid"></div>
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <p>No entries yet. Add your first entry above or click "Load Demo Data"!</p>
+        </div>
+        <div id="noResults" class="no-results" style="display: none;">
+            <p>No results found. Try adjusting your search or filters.</p>
+        </div>
+    </main>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="app.js"></script>
+    <script>
+        // Add demo data loader
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('loadDemo').addEventListener('click', () => {
+                const demoEntries = [
+                    {
+                        id: 'demo-1',
+                        keywords: ['react', 'hooks', 'usestate', 'frontend'],
+                        context: 'React Hooks allow you to use state and other React features without writing a class. useState is the most commonly used hook for managing component state.',
+                        label: 'React Hooks Guide',
+                        function: 'Frontend Development',
+                        timestamp: Date.now() - 86400000 * 5,
+                        createdAt: new Date(Date.now() - 86400000 * 5),
+                        updatedAt: new Date(Date.now() - 86400000 * 5)
+                    },
+                    {
+                        id: 'demo-2',
+                        keywords: ['javascript', 'async', 'await', 'promises'],
+                        context: 'Async/await is syntactic sugar for working with Promises in JavaScript. It makes asynchronous code look and behave more like synchronous code, improving readability.',
+                        label: 'Async JavaScript',
+                        function: 'Programming Concepts',
+                        timestamp: Date.now() - 86400000 * 3,
+                        createdAt: new Date(Date.now() - 86400000 * 3),
+                        updatedAt: new Date(Date.now() - 86400000 * 3)
+                    },
+                    {
+                        id: 'demo-3',
+                        keywords: ['css', 'grid', 'layout', 'responsive'],
+                        context: 'CSS Grid Layout is a two-dimensional layout system for the web. It lets you lay content out in rows and columns, making it easier to design complex responsive layouts.',
+                        label: 'CSS Grid Basics',
+                        function: 'Styling',
+                        timestamp: Date.now() - 86400000 * 7,
+                        createdAt: new Date(Date.now() - 86400000 * 7),
+                        updatedAt: new Date(Date.now() - 86400000 * 7)
+                    },
+                    {
+                        id: 'demo-4',
+                        keywords: ['typescript', 'types', 'interfaces', 'safety'],
+                        context: 'TypeScript adds static typing to JavaScript, helping catch errors during development. Interfaces define the structure of objects, providing better code documentation and IDE support.',
+                        label: 'TypeScript Interfaces',
+                        function: 'Type Safety',
+                        timestamp: Date.now() - 86400000 * 2,
+                        createdAt: new Date(Date.now() - 86400000 * 2),
+                        updatedAt: new Date(Date.now() - 86400000 * 2)
+                    },
+                    {
+                        id: 'demo-5',
+                        keywords: ['api', 'rest', 'http', 'backend'],
+                        context: 'REST APIs use HTTP methods (GET, POST, PUT, DELETE) to perform CRUD operations. They follow a stateless architecture where each request contains all necessary information.',
+                        label: 'REST API Design',
+                        function: 'Backend Development',
+                        timestamp: Date.now() - 86400000 * 1,
+                        createdAt: new Date(Date.now() - 86400000 * 1),
+                        updatedAt: new Date(Date.now() - 86400000 * 1)
+                    },
+                    {
+                        id: 'demo-6',
+                        keywords: ['git', 'version', 'control', 'collaboration'],
+                        context: 'Git is a distributed version control system that tracks changes in source code. Branches allow parallel development, and merging combines changes from different branches.',
+                        label: 'Git Workflow',
+                        function: 'Version Control',
+                        timestamp: Date.now() - 86400000 * 4,
+                        createdAt: new Date(Date.now() - 86400000 * 4),
+                        updatedAt: new Date(Date.now() - 86400000 * 4)
+                    },
+                    {
+                        id: 'demo-7',
+                        keywords: ['testing', 'unit', 'integration', 'quality'],
+                        context: 'Unit tests verify individual components work correctly in isolation. Integration tests check that multiple components work together properly. Both are essential for code quality.',
+                        label: 'Testing Strategies',
+                        function: 'Quality Assurance',
+                        timestamp: Date.now() - 86400000 * 6,
+                        createdAt: new Date(Date.now() - 86400000 * 6),
+                        updatedAt: new Date(Date.now() - 86400000 * 6)
+                    },
+                    {
+                        id: 'demo-8',
+                        keywords: ['performance', 'optimization', 'speed', 'efficiency'],
+                        context: 'Web performance optimization includes minimizing bundle size, lazy loading resources, optimizing images, and reducing network requests. Faster sites provide better user experience.',
+                        label: 'Performance Tips',
+                        function: 'Optimization',
+                        timestamp: Date.now(),
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    }
+                ];
+
+                localStorage.setItem('keyword-context-entries', JSON.stringify(demoEntries));
+                app.entries = app.storage.loadEntries();
+                app.applyFilters();
+                app.storage.showToast('Demo data loaded! Refresh to see changes.', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            });
+        });
+    </script>
+</body>
+</html>
