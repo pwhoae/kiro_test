@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pure 2D Rotation Tool</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Pure 2D Rotation Tool</h1>
+            <p>Generate rotated versions using shape-based presets</p>
+        </header>
+
+        <!-- Upload Section -->
+        <section class="upload-section">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-content">
+                    <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7,10 12,15 17,10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    <h3>Upload Image</h3>
+                    <p>PNG preferred for transparency</p>
+                </div>
+                <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp" hidden>
+            </div>
+        </section>
+
+        <!-- Shape Preset Section -->
+        <section class="preset-section" id="presetSection" style="display: none;">
+            <h3>Select Rotation Preset</h3>
+            <div class="shape-presets">
+                <button class="shape-btn active" data-preset="circle">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="10"/>
+                    </svg>
+                    <span>Circle</span>
+                    <small>10 angles (36° steps)</small>
+                </button>
+                <button class="shape-btn" data-preset="triangle">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M12 2 L22 20 L2 20 Z"/>
+                    </svg>
+                    <span>Triangle</span>
+                    <small>3 angles (120° steps)</small>
+                </button>
+                <button class="shape-btn" data-preset="square">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <rect x="3" y="3" width="18" height="18"/>
+                    </svg>
+                    <span>Square</span>
+                    <small>4 angles (90° steps)</small>
+                </button>
+            </div>
+            
+            <button class="generate-btn" id="generateBtn">Generate Rotations</button>
+        </section>
+
+        <!-- Progress Section -->
+        <section class="progress-section" id="progressSection" style="display: none;">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <p id="progressText">Generating rotations...</p>
+        </section>
+
+        <!-- Preview Section -->
+        <section class="preview-section" id="previewSection" style="display: none;">
+            <div class="preview-container">
+                <div class="preview-frame" id="previewFrame">
+                    <canvas id="previewCanvas"></canvas>
+                </div>
+                <div class="preview-controls">
+                    <input type="range" id="angleSlider" min="0" max="0" value="0" step="1">
+                    <div class="angle-display" id="angleDisplay">0°</div>
+                </div>
+            </div>
+            
+            <button class="download-btn" id="downloadBtn">Download All as ZIP</button>
+        </section>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
