@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Background Remover</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Background Remover</h1>
+        
+        <div class="controls">
+            <input type="file" id="fileInput" multiple accept="image/*">
+            <label for="fileInput" class="btn">Select Images</label>
+            
+            <select id="bgType">
+                <option value="white">White Background</option>
+                <option value="green">Green Background</option>
+            </select>
+            
+            <input type="range" id="threshold" min="0" max="255" value="100">
+            <label>Sensitivity: <span id="thresholdValue">100</span></label>
+        </div>
+
+        <div id="preview"></div>
+        
+        <button id="downloadAll" class="btn download-btn" style="display:none;">Download All</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
