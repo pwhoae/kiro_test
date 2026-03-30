@@ -1,0 +1,366 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Upload, 
+  FileText, 
+  PieChart, 
+  Share2, 
+  Download, 
+  Zap, 
+  ChevronRight, 
+  BrainCircuit, 
+  ListChecks,
+  AlertCircle,
+  Loader2,
+  Trash2,
+  MessageSquare
+} from 'lucide-react';
+
+// --- 配置與常量 ---
+const apiKey = ""; // 自動注入
+const MODEL_NAME = "gemini-2.5-flash-preview-09-2025";
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${apiKey}`;
+
+const App = () => {
+  // 狀態管理
+  const [files, setFiles] = useState([]);
+  const [activeTab, setActiveTab] = useState('summary'); // summary, insights, mindmap
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState({
+    summary: "",
+    insights: [],
+    mindmap: ""
+  });
+  const [error, setError] = useState(null);
+  const [chatInput, setChatInput] = useState("");
+  const [chatHistory, setChatHistory] = useState([]);
+
+  // 處理檔案上傳
+  const handleFileUpload = (e) => {
+    const uploadedFiles = Array.from(e.target.files);
+    const newFiles = uploadedFiles.map(file => ({
+      id: Math.random().toString(36).substr(2, 9),
+      name: file.name,
+      type: file.type,
+      size: (file.size / 1024).toFixed(1) + ' KB',
+      raw: file
+    }));
+    setFiles(prev => [...prev, ...newFiles]);
+  };
+
+  const removeFile = (id) => {
+    setFiles(prev => prev.filter(f => f.id !== id));
+  };
+
+  // 讀取檔案為 Base64
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  // 核心 API 調用函數（含指數退避重試）
+  const callGemini = async (prompt, mediaData = []) => {
+    let retries = 0;
+    const maxRetries = 5;
+    
+    const payload = {
+      contents: [{
+        parts: [
+          { text: prompt },
+          ...mediaData
+        ]
+      }],
+      generationConfig: {
+        temperature: 0.2,
+        topP: 0.8,
+        topK: 40,
+      }
+    };
+
+    while (retries <= maxRetries) {
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+        
+        const data = await response.json();
+        return data.candidates?.[0]?.content?.parts?.[0]?.text || "無回傳結果";
+      } catch (err) {
+        if (retries === maxRetries) throw err;
+        const delay = Math.pow(2, retries) * 1000;
+        await new Promise(res => setTimeout(res, delay));
+        retries++;
+      }
+    }
+  };
+
+  // 執行全方位分析
+  const runAnalysis = async () => {
+    if (files.length === 0) {
+      setError("請先上傳至少一個檔案。");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // 準備媒體資料 (目前範例處理首個檔案)
+      const base64Data = await fileToBase64(files[0].raw);
+      const mimeType = files[0].type || "application/pdf";
+      const mediaParts = [{ inlineData: { mimeType, data: base64Data } }];
+
+      // 1. 生成總結與重點 (Structured Output 模擬)
+      const prompt = `
+        你是一位專業的資料分析師。請針對上傳的文件執行以下任務：
+        1. 深度總結：用三段文字描述核心內容。
+        2. 重點提取：列出 5 個最重要的資訊點（如果是招聘文件則著重於技能與職責，如果是年報則著重於財務與策略）。
+        3. 思維導圖：使用簡單的 Markdown 縮排格式生成內容結構。
+        請以繁體中文回答。
+      `;
+
+      const responseText = await callGemini(prompt, mediaParts);
+      
+      // 簡單解析回傳內容 (實際開發建議用 JSON mode)
+      setResults({
+        summary: responseText,
+        insights: ["分析完成"],
+        mindmap: responseText // 這裡可以進一步解析
+      });
+
+    } catch (err) {
+      setError("分析過程中出錯，請稍後再試。");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+      {/* Header */}
+      <header className="bg-white border-b px-6 py-4 sticky top-0 z-10 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="bg-indigo-600 p-2 rounded-lg text-white">
+            <BrainCircuit size={24} />
+          </div>
+          <h1 className="text-xl font-bold tracking-tight text-slate-800">Gemini 多模態資料整理助手</h1>
+        </div>
+        <div className="flex items-center gap-4 text-sm text-slate-500">
+          <span className="flex items-center gap-1"><Zap size={14} className="text-amber-500" /> Powered by Gemini 2.5</span>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* 左側：上傳區 */}
+        <div className="lg:col-span-4 space-y-6">
+          <section className="bg-white rounded-2xl shadow-sm border p-6">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Upload size={18} className="text-indigo-600" /> 資料上傳
+            </h2>
+            
+            <div 
+              className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center hover:border-indigo-400 transition-colors cursor-pointer group"
+              onClick={() => document.getElementById('fileInput').click()}
+            >
+              <input 
+                id="fileInput" 
+                type="file" 
+                multiple 
+                className="hidden" 
+                onChange={handleFileUpload}
+              />
+              <div className="bg-indigo-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                <Upload size={20} className="text-indigo-600" />
+              </div>
+              <p className="text-sm font-medium text-slate-700">點擊或拖拽檔案至此</p>
+              <p className="text-xs text-slate-400 mt-1">支援 PDF, DOCX, PNG, JPG</p>
+            </div>
+
+            {files.length > 0 && (
+              <div className="mt-6 space-y-3">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">已選取檔案 ({files.length})</p>
+                {files.map(file => (
+                  <div key={file.id} className="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-100 group">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <FileText size={16} className="text-slate-400 shrink-0" />
+                      <div className="truncate">
+                        <p className="text-sm font-medium text-slate-700 truncate">{file.name}</p>
+                        <p className="text-[10px] text-slate-400">{file.size}</p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => removeFile(file.id)}
+                      className="p-1 hover:bg-red-50 hover:text-red-500 rounded text-slate-400"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button 
+              onClick={runAnalysis}
+              disabled={loading || files.length === 0}
+              className={`w-full mt-6 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all ${
+                loading 
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
+                  : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-200'
+              }`}
+            >
+              {loading ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
+              {loading ? '分析中...' : '開始自動整理'}
+            </button>
+
+            {error && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-lg flex items-center gap-2 text-red-600 text-sm">
+                <AlertCircle size={16} /> {error}
+              </div>
+            )}
+          </section>
+
+          {/* 快速提問 */}
+          <section className="bg-white rounded-2xl shadow-sm border p-6">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-slate-800">
+              <MessageSquare size={18} className="text-indigo-600" /> 針對文件追問
+            </h2>
+            <div className="relative">
+              <textarea 
+                placeholder="例如：這份年報提到的風險有哪些？"
+                className="w-full border rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none h-24 resize-none"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+              />
+              <button 
+                className="absolute bottom-3 right-3 p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                onClick={() => {
+                   if(chatInput) {
+                     setChatHistory(prev => [...prev, {role: 'user', content: chatInput}]);
+                     setChatInput("");
+                   }
+                }}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </section>
+        </div>
+
+        {/* 右側：結果展示區 */}
+        <div className="lg:col-span-8 flex flex-col gap-6">
+          <div className="bg-white rounded-2xl shadow-sm border overflow-hidden flex flex-col h-full min-h-[600px]">
+            {/* Tabs */}
+            <div className="flex border-b bg-slate-50/50">
+              <button 
+                onClick={() => setActiveTab('summary')}
+                className={`flex-1 py-4 px-6 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
+                  activeTab === 'summary' ? 'bg-white border-b-2 border-indigo-600 text-indigo-600' : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <ListChecks size={16} /> 深度總結
+              </button>
+              <button 
+                onClick={() => setActiveTab('mindmap')}
+                className={`flex-1 py-4 px-6 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
+                  activeTab === 'mindmap' ? 'bg-white border-b-2 border-indigo-600 text-indigo-600' : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <Share2 size={16} /> 思維導圖
+              </button>
+              <button 
+                onClick={() => setActiveTab('insights')}
+                className={`flex-1 py-4 px-6 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
+                  activeTab === 'insights' ? 'bg-white border-b-2 border-indigo-600 text-indigo-600' : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <PieChart size={16} /> 關鍵洞察
+              </button>
+            </div>
+
+            {/* Content Area */}
+            <div className="flex-1 p-8 overflow-y-auto">
+              {!results.summary && !loading && (
+                <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-4">
+                  <div className="bg-slate-100 p-6 rounded-full">
+                    <FileText size={48} />
+                  </div>
+                  <p className="text-lg">尚無分析資料，請在左側上傳檔案</p>
+                </div>
+              )}
+
+              {loading && (
+                <div className="h-full flex flex-col items-center justify-center space-y-4">
+                  <Loader2 className="animate-spin text-indigo-600" size={32} />
+                  <p className="text-indigo-600 font-medium animate-pulse">正在利用 Gemini 多模態引擎深度解析...</p>
+                </div>
+              )}
+
+              {results.summary && !loading && (
+                <div className="prose max-w-none animate-in fade-in duration-500">
+                  {activeTab === 'summary' && (
+                    <div className="space-y-6">
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-xl font-bold text-slate-800">文件深度分析</h3>
+                        <button className="text-xs flex items-center gap-1 text-indigo-600 font-bold bg-indigo-50 px-3 py-1.5 rounded-full hover:bg-indigo-100">
+                          <Download size={12} /> 導出報告
+                        </button>
+                      </div>
+                      <div className="text-slate-600 leading-relaxed whitespace-pre-wrap">
+                        {results.summary}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'mindmap' && (
+                    <div className="space-y-6">
+                       <h3 className="text-xl font-bold text-slate-800">內容結構圖</h3>
+                       <div className="bg-slate-900 text-indigo-300 p-6 rounded-xl font-mono text-sm border shadow-inner">
+                          {/* 這裡實務上會顯示 Mermaid 圖表 */}
+                          {results.mindmap.split('\n').map((line, idx) => (
+                            <div key={idx} style={{ paddingLeft: `${(line.match(/^\s*/)[0].length) * 10}px` }}>
+                              {line.trim().startsWith('-') || line.trim().startsWith('*') ? '○ ' : ''}{line.trim()}
+                            </div>
+                          ))}
+                       </div>
+                       <p className="text-xs text-slate-400 italic">提示：這是根據文件層級自動生成的概念結構。</p>
+                    </div>
+                  )}
+
+                  {activeTab === 'insights' && (
+                    <div className="space-y-6">
+                       <h3 className="text-xl font-bold text-slate-800">關鍵數據與趨勢</h3>
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {[
+                            {title: "核心價值", color: "border-blue-200 bg-blue-50"},
+                            {title: "潛在風險", color: "border-red-200 bg-red-50"},
+                            {title: "行動建議", color: "border-green-200 bg-green-50"},
+                            {title: "時間軸/里程碑", color: "border-purple-200 bg-purple-50"}
+                          ].map((box, i) => (
+                            <div key={i} className={`p-4 border rounded-xl ${box.color}`}>
+                              <h4 className="font-bold text-slate-800 mb-2">{box.title}</h4>
+                              <p className="text-xs text-slate-600">Gemini 正在提取該維度的詳細指標...</p>
+                            </div>
+                          ))}
+                       </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default App;
