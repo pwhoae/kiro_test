@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>十滴水 - 连锁反应益智游戏</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-color: #f0f9ff;
+            --cell-size: 65px;
+        }
+        body {
+            background-color: var(--bg-color);
+            touch-action: manipulation;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(6, var(--cell-size));
+            grid-template-rows: repeat(6, var(--cell-size));
+            gap: 8px;
+            background: #bae6fd;
+            padding: 12px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+        .cell {
+            width: var(--cell-size);
+            height: var(--cell-size);
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .cell:hover {
+            background: rgba(255, 255, 255, 0.8);
+        }
+        /* 水滴样式 */
+        .drop {
+            position: relative;
+            background: radial-gradient(circle at 30% 30%, #60a5fa, #2563eb);
+            border-radius: 50%;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: inset -2px -2px 6px rgba(0,0,0,0.2), 2px 2px 5px rgba(0,0,0,0.1);
+        }
+        .drop::after {
+            content: '';
+            position: absolute;
+            top: 15%;
+            left: 15%;
+            width: 30%;
+            height: 30%;
+            background: rgba(255,255,255,0.4);
+            border-radius: 50%;
+        }
+        .drop-1 { width: 20%; height: 20%; }
+        .drop-2 { width: 40%; height: 40%; }
+        .drop-3 { width: 65%; height: 65%; }
+        .drop-4 { width: 90%; height: 90%; }
+
+        /* 飞行的小水滴 */
+        .projectile {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #3b82f6;
+            border-radius: 50%;
+            z-index: 10;
+            pointer-events: none;
+            box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+        }
+
+        .count-badge {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @media (max-width: 480px) {
+            :root { --cell-size: 50px; }
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+    <!-- 顶部状态栏 -->
+    <div class="w-full max-w-md mb-6 flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl font-bold text-blue-600 mb-1">十滴水</h1>
+            <p class="text-gray-500 text-sm">点击水滴，引发连锁反应</p>
+        </div>
+        <div class="text-right">
+            <div id="drops-count" class="text-4xl font-black text-blue-500 count-badge">10</div>
+            <div class="text-xs font-bold text-blue-400 uppercase tracking-widest">剩余水滴</div>
+        </div>
+    </div>
+
+    <!-- 游戏主容器 -->
+    <div class="relative">
+        <div id="game-board" class="game-grid">
+            <!-- 单元格将由JS生成 -->
+        </div>
+        
+        <!-- 粒子容器 -->
+        <div id="particle-container" class="absolute inset-0 pointer-events-none"></div>
+    </div>
+
+    <!-- 底部控制栏 -->
+    <div class="w-full max-w-md mt-8 flex justify-between items-center">
+        <div class="bg-white px-4 py-2 rounded-full shadow-sm border border-blue-100">
+            <span class="text-gray-500 text-sm">关卡: </span>
+            <span id="level-display" class="font-bold text-blue-600">1</span>
+        </div>
+        <button id="reset-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full shadow-lg transition-all active:scale-95">
+            重新开始
+        </button>
+    </div>
+
+    <!-- 游戏结束/过关弹窗 -->
+    <div id="modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-6">
+        <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl">
+            <h2 id="modal-title" class="text-3xl font-bold text-gray-800 mb-2">太棒了！</h2>
+            <p id="modal-msg" class="text-gray-600 mb-8">你成功消除了所有水滴。</p>
+            <button id="modal-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-2xl text-xl transition-all">
+                下一关
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const GRID_SIZE = 6;
+        const boardElement = document.getElementById('game-board');
+        const particleContainer = document.getElementById('particle-container');
+        const dropsDisplay = document.getElementById('drops-count');
+        const levelDisplay = document.getElementById('level-display');
+        const modal = document.getElementById('modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMsg = document.getElementById('modal-msg');
+        const modalBtn = document.getElementById('modal-btn');
+        const resetBtn = document.getElementById('reset-btn');
+
+        let gameState = {
+            grid: [], // 存储水滴等级 0-4
+            dropsLeft: 10,
+            level: 1,
+            isAnimating: false,
+            projectiles: []
+        };
+
+        // 初始化游戏
+        function initGame(level = 1) {
+            gameState.grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(0));
+            gameState.dropsLeft = 10;
+            gameState.level = level;
+            gameState.isAnimating = false;
+            
+            // 随机生成初始水滴 (根据关卡增加难度)
+            const initialCount = 12 + Math.min(level * 2, 15);
+            for(let i = 0; i < initialCount; i++) {
+                let r, c;
+                do {
+                    r = Math.floor(Math.random() * GRID_SIZE);
+                    c = Math.floor(Math.random() * GRID_SIZE);
+                } while (gameState.grid[r][c] !== 0);
+                gameState.grid[r][c] = Math.floor(Math.random() * 4) + 1;
+            }
+
+            renderBoard();
+            updateStats();
+        }
+
+        // 渲染棋盘
+        function renderBoard() {
+            boardElement.innerHTML = '';
+            for(let r = 0; r < GRID_SIZE; r++) {
+                for(let c = 0; c < GRID_SIZE; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.r = r;
+                    cell.dataset.c = c;
+                    cell.onclick = () => handleCellClick(r, c);
+
+                    const level = gameState.grid[r][c];
+                    if (level > 0) {
+                        const drop = document.createElement('div');
+                        drop.className = `drop drop-${level}`;
+                        cell.appendChild(drop);
+                    }
+                    boardElement.appendChild(cell);
+                }
+            }
+        }
+
+        // 更新状态显示
+        function updateStats() {
+            dropsDisplay.innerText = gameState.dropsLeft;
+            levelDisplay.innerText = gameState.level;
+            
+            if (gameState.dropsLeft <= 0 && !gameState.isAnimating && !checkWin()) {
+                setTimeout(() => showModal('游戏结束', '你用完了所有水滴。', '再试一次', () => initGame(1)), 500);
+            }
+        }
+
+        // 检查是否获胜
+        function checkWin() {
+            return gameState.grid.every(row => row.every(cell => cell === 0));
+        }
+
+        // 处理点击
+        function handleCellClick(r, c) {
+            if (gameState.isAnimating || gameState.dropsLeft <= 0) return;
+
+            gameState.dropsLeft--;
+            updateStats();
+            increaseDrop(r, c);
+        }
+
+        // 增加水滴等级
+        function increaseDrop(r, c) {
+            if (r < 0 || r >= GRID_SIZE || c < 0 || c >= GRID_SIZE) return;
+
+            gameState.grid[r][c]++;
+            if (gameState.grid[r][c] > 4) {
+                gameState.grid[r][c] = 0;
+                burst(r, c);
+            }
+            renderBoard();
+        }
+
+        // 水滴爆裂
+        async function burst(r, c) {
+            gameState.isAnimating = true;
+            
+            const directions = [
+                { dr: -1, dc: 0 }, // 上
+                { dr: 1, dc: 0 },  // 下
+                { dr: 0, dc: -1 }, // 左
+                { dr: 0, dc: 1 }   // 右
+            ];
+
+            const projectiles = directions.map(dir => ({
+                r, c,
+                dr: dir.dr,
+                dc: dir.dc,
+                element: createProjectileElement(r, c)
+            }));
+
+            moveProjectiles(projectiles);
+        }
+
+        function createProjectileElement(r, c) {
+            const el = document.createElement('div');
+            el.className = 'projectile';
+            const rect = boardElement.children[r * GRID_SIZE + c].getBoundingClientRect();
+            const boardRect = boardElement.getBoundingClientRect();
+            
+            el.style.top = `${rect.top - boardRect.top + rect.height/2 - 6}px`;
+            el.style.left = `${rect.left - boardRect.left + rect.width/2 - 6}px`;
+            
+            particleContainer.appendChild(el);
+            return el;
+        }
+
+        function moveProjectiles(activeProjectiles) {
+            if (activeProjectiles.length === 0) {
+                gameState.isAnimating = false;
+                if (checkWin()) {
+                    setTimeout(() => showModal('干得漂亮！', `你通过了第 ${gameState.level} 关。`, '下一关', () => initGame(gameState.level + 1)), 500);
+                }
+                updateStats();
+                return;
+            }
+
+            const speed = 6; // 每次移动的像素
+            const nextBatch = [];
+
+            activeProjectiles.forEach(p => {
+                let top = parseFloat(p.element.style.top);
+                let left = parseFloat(p.element.style.left);
+                
+                top += p.dr * speed;
+                left += p.dc * speed;
+                
+                p.element.style.top = `${top}px`;
+                p.element.style.left = `${left}px`;
+
+                // 检查是否碰撞
+                const currentR = Math.floor((top + 6) / (boardElement.offsetHeight / GRID_SIZE));
+                const currentC = Math.floor((left + 6) / (boardElement.offsetWidth / GRID_SIZE));
+
+                // 边界检查
+                if (top < -10 || top > boardElement.offsetHeight + 10 || 
+                    left < -10 || left > boardElement.offsetWidth + 10) {
+                    p.element.remove();
+                    return;
+                }
+
+                // 碰撞检测逻辑：如果进入了一个新格子且该格子有水滴
+                if (currentR >= 0 && currentR < GRID_SIZE && currentC >= 0 && currentC < GRID_SIZE) {
+                    // 我们记录上次经过的格子，防止在同一个格子里重复触发
+                    if ((currentR !== p.lastR || currentC !== p.lastC) && gameState.grid[currentR][currentC] > 0) {
+                        p.element.remove();
+                        increaseDrop(currentR, currentC);
+                        return;
+                    }
+                    p.lastR = currentR;
+                    p.lastC = currentC;
+                }
+
+                nextBatch.push(p);
+            });
+
+            requestAnimationFrame(() => moveProjectiles(nextBatch));
+        }
+
+        // 弹窗控制
+        function showModal(title, msg, btnText, callback) {
+            modalTitle.innerText = title;
+            modalMsg.innerText = msg;
+            modalBtn.innerText = btnText;
+            modal.classList.remove('hidden');
+            
+            modalBtn.onclick = () => {
+                modal.classList.add('hidden');
+                callback();
+            };
+        }
+
+        resetBtn.onclick = () => initGame(1);
+
+        // 启动游戏
+        window.onload = () => initGame(1);
+    </script>
+</body>
+</html>
