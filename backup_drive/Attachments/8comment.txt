@@ -1,0 +1,10 @@
+please supplement “REM” remark for removed wire.
+please supplement “wire disconnection” checkmark (or cross checkmark) on removed wire.
+please supplement “wire count” on re-terminated wire.
+please supplement “bell test” on re-terminated wire.
+please supplement “profile check” on fuse terminal.
+please supplement “function test” on re-terminated wire.
+please supplement “strap and function test” on re-terminated wire.
+please supplement “voltage measurement” on re-terminated wire.
+
+

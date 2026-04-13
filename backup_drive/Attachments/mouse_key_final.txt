@@ -1,0 +1,215 @@
+#include "Mouse.h"
+#include "Keyboard.h"
+#include <EEPROM.h>
+
+// Set pin numbers for switch, joystick axes, and LED:
+const int xButton = 2;    // Pin for "X" key (was A)
+const int yButton = 4;    // Pin for "Y" key (was S)
+const int jButton = 2;    
+const int kButton = 4;    
+const int escButton = 7;  // Pin for "Esc" key (was mouseLeft)
+const int enterButton = 6; // Pin for "Enter" key (mode switch)
+const int mouseLeftClickButton = 5; // Pin for left mouse click
+const int mouseRightClickButton = 3; // Pin for right mouse click
+
+const int scrollUpButton = 5;     // Input pin for scroll wheel up
+const int scrollDownButton = 3;   // Input pin for scroll wheel down
+const int dpi = 7;                // Sensitivity
+const int minMax = 6;             // Sensitivity
+const int xAxis = A0;             // Joystick x axis
+const int yAxis = A1;             // Joystick y axis
+const int dpiPin = 13;            // DPI status LED
+const int keythreshold = 2; // Set keythreshold for WASD mode
+
+// Parameters for reading the joystick:
+int sensitivity[4] = {3, 6, 9, 12};  // Increase sensitivity for quicker movement
+int range = sensitivity[0];           // Output range of X or Y movement
+byte i = 0;
+int responseDelay = 5;               // Reduced response delay for quicker movement
+int scrollDelay = 50;
+float threshold = range / 4;         // Resting threshold
+float center = range / 2;            // Resting position value
+int scrollVal = 0;
+bool mode = false;                   // Mode flag: false = WASD, true = Mouse
+unsigned long lastDebounceTime = 0;
+unsigned long debounceDelay = 200;   // Debounce time in milliseconds
+
+void setDPI() {
+  switch (i) {
+    case 0: analogWrite(dpiPin, 0); break;
+    case 1: analogWrite(dpiPin, 84); break;
+    case 2: analogWrite(dpiPin, 128); break;
+    case 3: analogWrite(dpiPin, 255); break;
+    default: i = 0; EEPROM.write(0, i); break;
+  }
+  range = sensitivity[i];
+  threshold = range / 4;    // Resting threshold
+  center = range / 2;       // Resting position value
+}
+
+void setup() {
+  // Initialize serial communication
+  Serial.begin(9600);
+  
+  // Take control of the mouse and keyboard:
+  Mouse.begin();
+  Keyboard.begin();
+  pinMode(dpiPin, OUTPUT);
+  pinMode(escButton, INPUT);
+  pinMode(enterButton, INPUT);
+  pinMode(dpi, INPUT);
+  pinMode(scrollUpButton, INPUT);
+  pinMode(scrollDownButton, INPUT);
+ 
+  pinMode(xButton, INPUT);
+  pinMode(yButton, INPUT);
+  pinMode(jButton, INPUT);
+  pinMode(kButton, INPUT);
+  pinMode(mouseLeftClickButton, INPUT);
+  pinMode(mouseRightClickButton, INPUT);
+  i = EEPROM.read(0);
+  setDPI();
+}
+
+void loop() {
+  unsigned long currentTime = millis();
+  
+  // Switch mode with the enter button
+  if (digitalRead(enterButton) == LOW && (currentTime - lastDebounceTime) > debounceDelay) {
+    mode = !mode;
+    Serial.print("Mode switched to: ");
+    Serial.println(mode ? "Mouse" : "WASD");
+    lastDebounceTime = currentTime;
+  }
+  
+  checkButton(jButton, 'J');
+  checkButton(kButton, 'K');
+  // Read and scale the two axes:
+  float xReading = readAxis(xAxis);
+  float yReading = readAxis(yAxis);
+
+  if (mode) {
+    // Mouse mode
+    Mouse.move(-xReading, yReading, scrollVal);
+  } else {
+    // WASD mode
+    handleWASD(xReading, yReading);
+  }
+
+  // Handle special key buttons:
+  handleKeyButton(escButton, KEY_ESC, "Esc Key");
+
+  // Handle mouse clicks
+  handleMouseButton(mouseLeftClickButton, MOUSE_LEFT, "Left Click");
+  handleMouseButton(mouseRightClickButton, MOUSE_RIGHT, "Right Click");
+
+  // Handle scrolling:
+  handleScroll();
+
+  // Handle DPI change:
+  handleDPI();
+
+  delay(responseDelay);
+}
+
+void handleWASD(float xReading, float yReading) {
+  if (xReading > keythreshold) {
+    Keyboard.press('D');
+    Serial.println("D");
+  } else if (xReading < -keythreshold) {
+    Keyboard.press('A');
+    Serial.println("A");
+  } else {
+    Keyboard.release('A');
+    Keyboard.release('D');
+  }
+
+  if (yReading > keythreshold) {
+    Keyboard.press('S');
+    Serial.println("S");
+  } else if (yReading < -keythreshold) {
+    Keyboard.press('W');
+    Serial.println("W");
+  } else {
+    Keyboard.release('W');
+    Keyboard.release('S');
+  }
+  delay(200);
+}
+
+void handleKeyButton(int buttonPin, uint8_t key, const char* keyName) {
+  if (digitalRead(buttonPin) == LOW) {
+    Serial.println(keyName);
+    Keyboard.press(key);
+    delay(100); // Debounce delay
+    Keyboard.release(key);
+  }
+}
+
+void handleMouseButton(int buttonPin, uint8_t mouseButton, const char* buttonName) {
+  if (digitalRead(buttonPin) == LOW) {
+    if (!Mouse.isPressed(mouseButton)) {
+      Serial.println(buttonName);
+      Mouse.press(mouseButton);
+      delay(100); // Debounce delay
+      Mouse.release(mouseButton);
+    }
+  }
+}
+
+void handleScroll() {
+  if (digitalRead(scrollUpButton) == LOW) {
+    scrollVal = 1;
+    delay(scrollDelay);
+  } else if (digitalRead(scrollDownButton) == LOW) {
+    scrollVal = -1;
+    delay(scrollDelay);
+  } else {
+    scrollVal = 0;
+  }
+}
+
+void handleDPI() {
+  if (digitalRead(dpi) == LOW) {
+    i = (i == (sizeof(sensitivity) / sizeof(int)) - 1) ? (0) : (i + 1);
+    EEPROM.write(0, i);
+    setDPI();
+    delay(500);
+  }
+
+  if (digitalRead(minMax) == LOW) {
+    switch (i) {
+      case 0: i = EEPROM.read(0); break;
+      default: i = 0; break;
+    }
+    setDPI();
+    delay(500);
+  }
+}
+
+void checkButton(int buttonPin, char key) {
+  if (digitalRead(buttonPin) == LOW) {
+    Keyboard.press(key);
+    Serial.println(key);
+    delay(200); // Debounce delay
+    Keyboard.release(key);
+  }
+}
+
+float mapfloat(float x, float in_min, float in_max, float out_min, float out_max) {
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+float readAxis(int thisAxis) {
+  float reading = analogRead(thisAxis);
+  reading = mapfloat(reading, 0, 1023, 0, range);
+  float distance = reading - center;
+
+  // Reverse the direction
+  distance = -distance;
+
+  if (abs(distance) < threshold) {
+    distance = 0;
+  }
+  return distance;
+}
