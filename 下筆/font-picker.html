@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>字體選擇器</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&family=Noto+Sans+TC:wght@400;700&family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&family=ZCOOL+KuaiLe&family=Long+Cang&family=Zhi+Mang+Xing&family=Liu+Jian+Mao+Cao&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: sans-serif;
+    background: #f5f0eb;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  .phone {
+    width: 360px;
+    background: #fff;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  }
+
+  /* 頂部工具列 */
+  .top-bar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+  }
+  .top-bar button {
+    width: 36px; height: 36px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #f9f9f9;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* 標題橫幅 */
+  .banner {
+    background: #3d2b1f;
+    color: #fff;
+    font-size: 22px;
+    font-weight: bold;
+    padding: 20px 24px;
+    margin: 24px 16px;
+    border-radius: 8px;
+    letter-spacing: 1px;
+  }
+
+  /* 畫布區域 */
+  .canvas-area {
+    height: 80px;
+  }
+
+  /* 工具列 */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    gap: 8px;
+    border-top: 1px solid #eee;
+  }
+  .toolbar .tool-left {
+    display: flex; gap: 8px; flex: 1;
+  }
+  .toolbar button {
+    width: 32px; height: 32px;
+    border: none; background: none;
+    cursor: pointer; font-size: 18px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .toolbar button:hover { background: #f0f0f0; }
+  .plan-btn {
+    border: 1px solid #ccc !important;
+    border-radius: 16px !important;
+    padding: 4px 12px !important;
+    font-size: 13px !important;
+    width: auto !important;
+    color: #555;
+  }
+
+  /* 模式按鈕列 */
+  .mode-bar {
+    display: flex;
+    padding: 6px 16px;
+    gap: 6px;
+    border-bottom: 1px solid #eee;
+  }
+  .mode-bar button {
+    flex: 1;
+    height: 38px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #f9f9f9;
+    cursor: pointer;
+    font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .mode-bar button.active {
+    background: #3d2b1f;
+    color: #fff;
+    border-color: #3d2b1f;
+  }
+
+  /* 分類 tab */
+  .tabs {
+    display: flex;
+    padding: 10px 16px 0;
+    gap: 16px;
+    border-bottom: 1px solid #eee;
+  }
+  .tabs span {
+    font-size: 14px;
+    color: #888;
+    padding-bottom: 8px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+  }
+  .tabs span.active {
+    color: #222;
+    font-weight: bold;
+    border-bottom: 2px solid #3d2b1f;
+  }
+  .tabs .info {
+    margin-left: auto;
+    color: #e07b00;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  /* 字體列表 */
+  .font-list {
+    padding: 8px 0;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .font-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .font-item:hover { background: #faf7f4; }
+  .font-item.selected { background: #f5ede6; }
+
+  .font-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    border: 1.5px solid #aaa;
+    margin-right: 12px;
+    flex-shrink: 0;
+  }
+  .font-dot.filled { background: #3d2b1f; border-color: #3d2b1f; }
+
+  .font-name {
+    flex: 1;
+    font-size: 16px;
+    color: #222;
+  }
+  /* 各字體用不同 font-family 展示風格 */
+  .font-name.f-noto-serif  { font-family: 'Noto Serif TC', serif; }
+  .font-name.f-noto-sans   { font-family: 'Noto Sans TC', sans-serif; }
+  .font-name.f-ma-shan     { font-family: 'Ma Shan Zheng', cursive; }
+  .font-name.f-xiaowei     { font-family: 'ZCOOL XiaoWei', serif; }
+  .font-name.f-kuaile      { font-family: 'ZCOOL KuaiLe', cursive; }
+  .font-name.f-long-cang   { font-family: 'Long Cang', cursive; }
+  .font-name.f-zhi-mang    { font-family: 'Zhi Mang Xing', cursive; }
+  .font-name.f-liu-jian    { font-family: 'Liu Jian Mao Cao', cursive; }
+
+  .star { color: #f0c040; font-size: 18px; }
+
+  /* 靜音按鈕 */
+  .mute-btn {
+    position: absolute;
+    bottom: 20px; right: 20px;
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.45);
+    color: #fff;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .bottom-wrap { position: relative; }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <!-- 頂部工具列 -->
+  <div class="top-bar">
+    <button title="新增">☐</button>
+    <button title="編輯">✏️</button>
+    <button title="下載">⬇</button>
+    <button title="複製">⧉</button>
+  </div>
+
+  <!-- 標題橫幅 -->
+  <div class="banner">測試！</div>
+
+  <!-- 空白畫布區 -->
+  <div class="canvas-area"></div>
+
+  <!-- 工具列 -->
+  <div class="toolbar">
+    <div class="tool-left">
+      <button title="橡皮擦">◇</button>
+      <button title="復原">↩</button>
+      <button title="重做">↪</button>
+    </div>
+    <button class="plan-btn">🅐 組體方案</button>
+  </div>
+
+  <!-- 模式按鈕列 -->
+  <div class="mode-bar">
+    <button title="鍵盤">⌨</button>
+    <button title="圖片">🖼</button>
+    <button class="active" title="字體">字</button>
+    <button title="圓形">○</button>
+    <button title="對齊">≡</button>
+    <button title="字型A">字A</button>
+    <button title="填色">⬤</button>
+  </div>
+
+  <!-- 分類 tab -->
+  <div class="tabs">
+    <span>全部</span>
+    <span>中文</span>
+    <span>擴充</span>
+    <span class="active">訂閱</span>
+    <span>最愛</span>
+    <span class="info">ⓘ</span>
+  </div>
+
+  <!-- 字體列表 -->
+  <div class="bottom-wrap">
+    <div class="font-list">
+      <div class="font-item" onclick="selectFont(this)">
+        <div class="font-dot"></div>
+        <span class="font-name f-noto-serif">jf金萱3.0　Noto Serif TC</span>
+        <span class="star">★</span>
+      </div>
+      <div class="font-item selected" onclick="selectFont(this)">
+        <div class="font-dot filled"></div>
+        <span class="font-name f-ma-shan">戲書　Ma Shan Zheng</span>
+      </div>
+      <div class="font-item" onclick="selectFont(this)">
+        <div class="font-dot"></div>
+        <span class="font-name f-noto-sans">柒筆手寫體　Noto Sans TC</span>
+      </div>
+      <div class="font-item" onclick="selectFont(this)">
+        <div class="font-dot"></div>
+        <span class="font-name f-xiaowei">汲古書體　ZCOOL XiaoWei</span>
+      </div>
+      <div class="font-item" onclick="selectFont(this)">
+        <div class="font-dot"></div>
+        <span class="font-name f-kuaile">清松手寫體　ZCOOL KuaiLe</span>
+      </div>
+      <div class="font-item" onclick="selectFont(this)">
+        <div class="font-dot"></div>
+        <span class="font-name f-long-cang">芫荽　Long Cang</span>
+      </div>
+      <div class="font-item" onclick="selectFont(this)">
+        <div class="font-dot"></div>
+        <span class="font-name f-zhi-mang">墨韻行書　Zhi Mang Xing</span>
+      </div>
+      <div class="font-item" onclick="selectFont(this)">
+        <div class="font-dot"></div>
+        <span class="font-name f-liu-jian">貓爪草書　Liu Jian Mao Cao</span>
+      </div>
+    </div>
+    <button class="mute-btn" title="靜音">🔇</button>
+  </div>
+</div>
+
+<script>
+  function selectFont(el) {
+    document.querySelectorAll('.font-item').forEach(i => {
+      i.classList.remove('selected');
+      i.querySelector('.font-dot').classList.remove('filled');
+    });
+    el.classList.add('selected');
+    el.querySelector('.font-dot').classList.add('filled');
+  }
+
+  document.querySelectorAll('.tabs span:not(.info)').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tabs span:not(.info)').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>
