@@ -1,0 +1,9 @@
+@tool
+extends CharacterBody2D
+@export_category("Player Setting")
+@export_group("Player")
+@export_range(0,1000,10) var player_speed:float=300
+@export_enum("test","next") var player_type:int=0
+@export_flags("attack","defense") var player_skills:int=0
+@export_file("*.txt") var files:String
+@export_dir() var folder:String
