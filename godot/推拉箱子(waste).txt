@@ -1,0 +1,39 @@
+waste
+#推拉箱子
+【别再手搓推箱子了！Godot组件化推拉系统，拖拽即用，太丝滑了！#Godot教程 #Godot4 #2D游戏开发 #横版游戏 #推箱子 #游戏编程 #独立游戏】 https://www.bilibili.com/video/BV1SJo8BgE4R/?share_source=copy_web&vd_source=d7f849d08eeb1405afe10c2ea0062d8e
+class_name MoveComponent
+
+extends Node
+@export var gravity: float = 3000.0
+@export var speed : float = 30.0
+@export var left_collision_ray: RayCast2D
+@export var right_collision_ray: RayCast2D
+
+
+@onready var parent: CharacterBody2D = get_parent()
+var grabbed:bool=false
+var player:Player=null
+
+func _physics_process(delta: float) -> void:
+    _apply_gravity(delta)
+    parent.move_and_slide()
+
+func _apply_gravity(delta : float) -> void:
+    if not parent.is_on_floor():
+        parent.velocity.y += gravity * delta
+		
+#detect
+func _get_collision_normal() -> float:
+    if left_collision_ray.is_colliding(): return 1.0
+    elif right_collision_ray.is_colliding(): return -1.0
+    else: return 0.0
+
+func _is_interactable() -> bool:
+    return left_collision_ray.is_colliding() or right_collision_ray.is_colliding()
+
+func _get_collider() -> Player:
+    for ray in [left_collision_ray, right_collision_ray]:
+        if ray.is_colliding() and ray.get_collider() is Player:
+            return ray.get_collider()
+    return null
+
