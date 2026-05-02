@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>視差與滑鼠互動 Banner 測試</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --parallax-img: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=2070');
+            --m-x: 0deg;
+            --m-y: 0deg;
+        }
+
+        body {
+            overflow-x: hidden;
+        }
+
+        /* 視差容器 */
+        .parallax-wrapper {
+            perspective: 1000px; /* 啟用 3D 空間感 */
+            overflow: hidden;
+        }
+
+        .parallax-container {
+            height: 60vh;
+            background-image: var(--parallax-img);
+            background-attachment: fixed;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-image 0.3s ease-in-out;
+            /* 滑鼠互動變形 */
+            transform: rotateX(var(--m-y)) rotateY(var(--m-x));
+            transition: transform 0.1s ease-out;
+        }
+
+        .parallax-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(45deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 100%);
+        }
+
+        .parallax-content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            color: white;
+            text-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            /* 讓文字與背景產生位移差 */
+            transform: translateZ(50px); 
+        }
+
+        @media (max-width: 768px) {
+            .parallax-container {
+                background-attachment: scroll;
+                height: 45vh;
+                transform: none !important; /* 手機端停用滑鼠效果 */
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <nav class="bg-white shadow-sm p-4 sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold text-gray-800">Interactive Parallax</h1>
+            <p class="text-sm text-blue-600 font-medium">試著在 Banner 上移動滑鼠</p>
+        </div>
+    </nav>
+
+    <!-- 測試控制面板 -->
+    <section class="container mx-auto my-6 p-6 bg-white rounded-xl shadow-sm border">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-2">
+                <label class="text-xs font-bold text-gray-400 uppercase">圖片網址</label>
+                <div class="flex gap-2">
+                    <input type="text" id="imageUrlInput" placeholder="貼上圖片 URL..." class="flex-1 p-2 bg-gray-50 border rounded-lg outline-none focus:border-blue-400">
+                    <button onclick="updateFromUrl()" class="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition">更新</button>
+                </div>
+            </div>
+            <div class="space-y-2">
+                <label class="text-xs font-bold text-gray-400 uppercase">上傳檔案</label>
+                <input type="file" id="fileInput" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700">
+            </div>
+        </div>
+    </section>
+
+    <div class="h-20 flex items-center justify-center text-gray-400">向下捲動查看互動</div>
+
+    <!-- 互動 Banner 區域 -->
+    <div class="parallax-wrapper">
+        <div id="parallaxBanner" class="parallax-container">
+            <div class="parallax-overlay"></div>
+            <div class="parallax-content px-4">
+                <h2 class="text-5xl md:text-7xl font-black mb-4 tracking-tighter">DYNAMIC VIEW</h2>
+                <p class="text-xl md:text-2xl font-light tracking-widest opacity-80">MOUSE REACTION ENABLED</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 內容區 -->
+    <div class="container mx-auto p-12 bg-white mt-10 space-y-8 rounded-xl shadow-sm border">
+        <h3 class="text-3xl font-bold">互動說明</h3>
+        <p class="text-gray-600 leading-relaxed">
+            當你的滑鼠在 Banner 上方移動時，容器會計算座標並調整 CSS 變數 <code>--m-x</code> 與 <code>--m-y</code>，進而驅動 <code>rotateX</code> 與 <code>rotateY</code> 的變形。這配合 <code>background-attachment: fixed</code> 的視差效果，能創造出強烈的空間深度感。
+        </p>
+        <div class="h-[800px] bg-gradient-to-b from-gray-50 to-white flex items-start justify-center pt-20">
+            <p class="text-gray-300 italic">長內容區塊，方便測試捲動視差...</p>
+        </div>
+    </div>
+
+    <script>
+        const banner = document.getElementById('parallaxBanner');
+        const urlInput = document.getElementById('imageUrlInput');
+        const fileInput = document.getElementById('fileInput');
+
+        // 滑鼠互動邏輯
+        banner.addEventListener('mousemove', (e) => {
+            const { left, top, width, height } = banner.getBoundingClientRect();
+            const x = (e.clientX - left) / width;
+            const y = (e.clientY - top) / height;
+            
+            // 計算旋轉角度 (限制在 -5deg 到 5deg 之間)
+            const moveX = (x - 0.5) * 10; 
+            const moveY = (y - 0.5) * -10;
+
+            document.documentElement.style.setProperty('--m-x', `${moveX}deg`);
+            document.documentElement.style.setProperty('--m-y', `${moveY}deg`);
+        });
+
+        // 離開時恢復原狀
+        banner.addEventListener('mouseleave', () => {
+            document.documentElement.style.setProperty('--m-x', `0deg`);
+            document.documentElement.style.setProperty('--m-y', `0deg`);
+        });
+
+        // 圖片處理邏輯
+        function setBackgroundImage(src) {
+            document.documentElement.style.setProperty('--parallax-img', `url('${src}')`);
+        }
+
+        function updateFromUrl() {
+            if (urlInput.value) setBackgroundImage(urlInput.value);
+        }
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (ev) => setBackgroundImage(ev.target.result);
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
+</body>
+</html>
