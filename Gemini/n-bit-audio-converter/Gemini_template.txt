@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>8/n-Bit Audio Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .retro-font {
+            font-family: 'Press+Start+2P', cursive;
+            line-height: 1.5;
+        }
+
+        .crt-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 4px, 3px 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .slider-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #10b981;
+            cursor: pointer;
+            border-radius: 2px;
+        }
+
+        .pixel-border {
+            box-shadow: 
+                0 4px 0 -2px #1e293b, 
+                0 -4px 0 -2px #1e293b, 
+                4px 0 0 -2px #1e293b, 
+                -4px 0 0 -2px #1e293b;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="crt-overlay"></div>
+
+    <main class="w-full max-w-2xl bg-slate-800 p-8 rounded-lg shadow-2xl border-4 border-slate-700 relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-sky-500 to-purple-500"></div>
+        
+        <header class="text-center mb-8">
+            <h1 class="retro-font text-xl text-emerald-400 mb-2">8-BIT CONVERTER</h1>
+            <p class="text-slate-400 text-sm italic">Crush your high-fidelity audio into retro gold</p>
+        </header>
+
+        <!-- Upload Area -->
+        <div id="drop-zone" class="border-2 border-dashed border-slate-600 rounded-lg p-10 text-center transition-colors hover:border-emerald-500 mb-8 cursor-pointer bg-slate-900/50">
+            <input type="file" id="audio-input" accept="audio/*" class="hidden">
+            <div id="upload-prompt">
+                <svg class="w-12 h-12 mx-auto mb-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                </svg>
+                <p class="text-lg">Click or Drag MP3 / WAV</p>
+            </div>
+            <div id="file-info" class="hidden">
+                <p class="text-emerald-400 font-mono" id="filename-display"></p>
+                <button id="change-file" class="text-xs text-slate-400 underline mt-2">Change File</button>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div>
+                <label class="block text-sm font-mono text-emerald-500 mb-2">BIT DEPTH: <span id="bit-val">8</span>-bit</label>
+                <input type="range" id="bit-slider" min="1" max="16" value="8" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer slider-thumb">
+                <p class="text-[10px] text-slate-500 mt-1">Lower = More noise/distortion</p>
+            </div>
+            <div>
+                <label class="block text-sm font-mono text-emerald-500 mb-2">SAMPLE RATE: <span id="rate-val">8000</span>Hz</label>
+                <input type="range" id="rate-slider" min="1000" max="44100" step="500" value="8000" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer slider-thumb">
+                <p class="text-[10px] text-slate-500 mt-1">Lower = Muffled/Aliased sound</p>
+            </div>
+        </div>
+
+        <!-- Progress/Status -->
+        <div id="status-bar" class="hidden mb-6">
+            <div class="w-full bg-slate-700 h-4 rounded-full overflow-hidden">
+                <div id="progress-fill" class="h-full bg-emerald-500 transition-all duration-300" style="width: 0%"></div>
+            </div>
+            <p id="status-text" class="text-center text-xs font-mono mt-2 text-slate-400">READY</p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col gap-4">
+            <div class="flex gap-4">
+                <button id="preview-btn" disabled class="flex-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed py-3 rounded font-mono text-sm transition-all">
+                    ▶ PLAY PREVIEW
+                </button>
+                <button id="stop-btn" disabled class="bg-red-900/30 text-red-500 hover:bg-red-900/50 py-3 px-6 rounded font-mono text-sm transition-all">
+                    ■ STOP
+                </button>
+            </div>
+            <button id="download-btn" disabled class="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed py-4 rounded font-bold text-white shadow-lg transition-all">
+                DOWNLOAD 8-BIT WAV
+            </button>
+        </div>
+
+        <footer class="mt-8 pt-6 border-t border-slate-700 text-center text-[10px] text-slate-500 uppercase tracking-widest">
+            Processing is done locally in your browser
+        </footer>
+    </main>
+
+    <script>
+        const audioInput = document.getElementById('audio-input');
+        const dropZone = document.getElementById('drop-zone');
+        const bitSlider = document.getElementById('bit-slider');
+        const rateSlider = document.getElementById('rate-slider');
+        const bitVal = document.getElementById('bit-val');
+        const rateVal = document.getElementById('rate-val');
+        const previewBtn = document.getElementById('preview-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const statusText = document.getElementById('status-text');
+        const progressFill = document.getElementById('progress-fill');
+        const filenameDisplay = document.getElementById('filename-display');
+        const uploadPrompt = document.getElementById('upload-prompt');
+        const fileInfo = document.getElementById('file-info');
+
+        let audioContext;
+        let originalBuffer;
+        let processedBuffer;
+        let currentSource;
+
+        // --- UI Events ---
+
+        bitSlider.oninput = () => bitVal.textContent = bitSlider.value;
+        rateSlider.oninput = () => rateVal.textContent = rateSlider.value;
+
+        dropZone.onclick = () => audioInput.click();
+        
+        audioInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) handleFile(file);
+        };
+
+        document.getElementById('change-file').onclick = (e) => {
+            e.stopPropagation();
+            audioInput.click();
+        };
+
+        previewBtn.onclick = () => playBuffer(processedBuffer);
+        stopBtn.onclick = () => stopPlayback();
+        downloadBtn.onclick = () => downloadWav();
+
+        // --- File Handling ---
+
+        async function handleFile(file) {
+            uploadPrompt.classList.add('hidden');
+            fileInfo.classList.remove('hidden');
+            filenameDisplay.textContent = file.name;
+            
+            statusText.textContent = "DECODING AUDIO...";
+            document.getElementById('status-bar').classList.remove('hidden');
+            progressFill.style.width = "20%";
+
+            const arrayBuffer = await file.arrayBuffer();
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            try {
+                originalBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                progressFill.style.width = "50%";
+                await processAudio();
+            } catch (err) {
+                statusText.textContent = "ERROR DECODING FILE";
+                console.error(err);
+            }
+        }
+
+        // --- Audio Processing Logic ---
+
+        async function processAudio() {
+            if (!originalBuffer) return;
+
+            statusText.textContent = "APPLYING BIT-CRUSH...";
+            progressFill.style.width = "70%";
+
+            const bits = parseInt(bitSlider.value);
+            const targetRate = parseInt(rateSlider.value);
+            
+            // We use an OfflineAudioContext to "render" the effect
+            // However, for bit-crushing and downsampling, manual manipulation of the buffer is more authentic
+            
+            const numChannels = originalBuffer.numberOfChannels;
+            const originalRate = originalBuffer.sampleRate;
+            const duration = originalBuffer.duration;
+            
+            // Calculate new length based on downsampling
+            const newLength = Math.floor(duration * targetRate);
+            const offlineCtx = new OfflineAudioContext(numChannels, newLength, targetRate);
+            
+            // Create the processed buffer
+            processedBuffer = offlineCtx.createBuffer(numChannels, newLength, targetRate);
+
+            for (let channel = 0; channel < numChannels; channel++) {
+                const oldData = originalBuffer.getChannelData(channel);
+                const newData = processedBuffer.getChannelData(channel);
+                
+                const step = originalRate / targetRate;
+                const levels = Math.pow(2, bits);
+
+                for (let i = 0; i < newLength; i++) {
+                    // Downsampling: pick the nearest sample from the original
+                    let sample = oldData[Math.floor(i * step)];
+                    
+                    // Bit Crushing: Quantization
+                    // Scale from [-1, 1] to [0, levels-1]
+                    sample = Math.round(((sample + 1) / 2) * (levels - 1));
+                    // Scale back to [-1, 1]
+                    sample = (sample / (levels - 1)) * 2 - 1;
+                    
+                    newData[i] = sample;
+                }
+            }
+
+            progressFill.style.width = "100%";
+            statusText.textContent = "READY";
+            previewBtn.disabled = false;
+            downloadBtn.disabled = false;
+        }
+
+        // Re-process if sliders change
+        const debounceProcess = () => {
+            if (originalBuffer) processAudio();
+        };
+        bitSlider.onchange = debounceProcess;
+        rateSlider.onchange = debounceProcess;
+
+        // --- Playback ---
+
+        function playBuffer(buffer) {
+            stopPlayback();
+            currentSource = audioContext.createBufferSource();
+            currentSource.buffer = buffer;
+            currentSource.connect(audioContext.destination);
+            currentSource.start();
+            
+            previewBtn.textContent = "🔊 PLAYING...";
+            stopBtn.disabled = false;
+            
+            currentSource.onended = () => {
+                previewBtn.textContent = "▶ PLAY PREVIEW";
+                stopBtn.disabled = true;
+            };
+        }
+
+        function stopPlayback() {
+            if (currentSource) {
+                currentSource.stop();
+                currentSource = null;
+            }
+            previewBtn.textContent = "▶ PLAY PREVIEW";
+            stopBtn.disabled = true;
+        }
+
+        // --- Export to WAV ---
+
+        function downloadWav() {
+            const buffer = processedBuffer;
+            const wavData = audioBufferToWav(buffer);
+            const blob = new Blob([wavData], { type: 'audio/wav' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `8bit_${filenameDisplay.textContent.split('.')[0]}.wav`;
+            link.click();
+        }
+
+        // Helper function to encode AudioBuffer to WAV format
+        function audioBufferToWav(buffer) {
+            const numChannels = buffer.numberOfChannels;
+            const sampleRate = buffer.sampleRate;
+            const format = 1; // PCM
+            const bitDepth = 16; // We output 16-bit PCM for compatibility, but it contains 8-bit quantized data
+            
+            const bytesPerSample = bitDepth / 8;
+            const blockAlign = numChannels * bytesPerSample;
+            
+            const dataLength = buffer.length * blockAlign;
+            const bufferLength = 44 + dataLength;
+            
+            const arrayBuffer = new ArrayBuffer(bufferLength);
+            const view = new DataView(arrayBuffer);
+            
+            const writeString = (offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            };
+
+            /* RIFF identifier */
+            writeString(0, 'RIFF');
+            /* file length */
+            view.setUint32(4, 36 + dataLength, true);
+            /* RIFF type */
+            writeString(8, 'WAVE');
+            /* format chunk identifier */
+            writeString(12, 'fmt ');
+            /* format chunk length */
+            view.setUint32(16, 16, true);
+            /* sample format (raw) */
+            view.setUint16(20, format, true);
+            /* channel count */
+            view.setUint16(22, numChannels, true);
+            /* sample rate */
+            view.setUint32(24, sampleRate, true);
+            /* byte rate (sample rate * block align) */
+            view.setUint32(28, sampleRate * blockAlign, true);
+            /* block align (channel count * bytes per sample) */
+            view.setUint16(32, blockAlign, true);
+            /* bits per sample */
+            view.setUint16(34, bitDepth, true);
+            /* data chunk identifier */
+            writeString(36, 'data');
+            /* data chunk length */
+            view.setUint32(40, dataLength, true);
+
+            // Write PCM samples
+            const offset = 44;
+            for (let i = 0; i < buffer.length; i++) {
+                for (let channel = 0; channel < numChannels; channel++) {
+                    const sample = Math.max(-1, Math.min(1, buffer.getChannelData(channel)[i]));
+                    const intSample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+                    view.setInt16(offset + (i * blockAlign) + (channel * bytesPerSample), intSample, true);
+                }
+            }
+
+            return arrayBuffer;
+        }
+
+        // Handle Drag & Drop
+        dropZone.ondragover = (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-emerald-500');
+        };
+        dropZone.ondragleave = () => {
+            dropZone.classList.remove('border-emerald-500');
+        };
+        dropZone.ondrop = (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-emerald-500');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('audio/')) handleFile(file);
+        };
+    </script>
+</body>
+</html>

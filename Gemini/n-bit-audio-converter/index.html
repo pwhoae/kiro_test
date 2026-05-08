@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Retro Audio Bitcrusher</title>
+
+  <meta name="description"
+    content="Convert modern audio into retro 8-bit console sound directly in your browser.">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-4">
+
+<div class="crt-overlay"></div>
+
+<main class="w-full max-w-2xl bg-slate-800 p-8 rounded-lg shadow-2xl border-4 border-slate-700 relative overflow-hidden">
+
+<div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-sky-500 to-purple-500"></div>
+
+<header class="text-center mb-8">
+<h1 class="retro-font text-xl text-emerald-400 mb-2">RETRO AUDIO BITCRUSHER</h1>
+<p class="text-slate-400 text-sm italic">Turn modern audio into retro console sound</p>
+</header>
+
+<div id="drop-zone"
+class="border-2 border-dashed border-slate-600 rounded-lg p-10 text-center transition-colors hover:border-emerald-500 mb-8 cursor-pointer bg-slate-900/50">
+
+<input type="file" id="audio-input" accept="audio/*" class="hidden">
+
+<div id="upload-prompt">
+<p class="text-lg">Click or Drag MP3 / WAV</p>
+</div>
+
+<div id="file-info" class="hidden">
+<p class="text-emerald-400 font-mono" id="filename-display"></p>
+<button id="change-file" class="text-xs text-slate-400 underline mt-2">
+Change File
+</button>
+</div>
+
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+
+<div>
+<label class="block text-sm font-mono text-emerald-500 mb-2">
+BIT DEPTH: <span id="bit-val">8</span>-bit
+</label>
+
+<input type="range"
+id="bit-slider"
+min="1"
+max="16"
+value="8"
+class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer slider-thumb">
+</div>
+
+<div>
+<label class="block text-sm font-mono text-emerald-500 mb-2">
+SAMPLE RATE: <span id="rate-val">8000</span>Hz
+</label>
+
+<input type="range"
+id="rate-slider"
+min="1000"
+max="44100"
+step="500"
+value="8000"
+class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer slider-thumb">
+</div>
+
+</div>
+
+<div id="status-bar" class="hidden mb-6">
+<div class="w-full bg-slate-700 h-4 rounded-full overflow-hidden">
+<div id="progress-fill"
+class="h-full bg-emerald-500 transition-all duration-300"
+style="width: 0%">
+</div>
+</div>
+
+<p id="status-text"
+class="text-center text-xs font-mono mt-2 text-slate-400">
+READY
+</p>
+</div>
+
+<div class="flex flex-col gap-4">
+
+<div class="flex gap-4">
+
+<button id="preview-btn"
+disabled
+class="flex-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 py-3 rounded font-mono text-sm transition-all">
+▶ PLAY PREVIEW
+</button>
+
+<button id="stop-btn"
+disabled
+class="bg-red-900/30 text-red-500 hover:bg-red-900/50 py-3 px-6 rounded font-mono text-sm transition-all">
+■ STOP
+</button>
+
+</div>
+
+<button id="download-btn"
+disabled
+class="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 py-4 rounded font-bold text-white shadow-lg transition-all">
+DOWNLOAD WAV
+</button>
+
+</div>
+
+<footer class="mt-8 pt-6 border-t border-slate-700 text-center text-[10px] text-slate-500 uppercase tracking-widest">
+Processing is done locally in your browser
+</footer>
+
+</main>
+
+<script src="script.js"></script>
+
+</body>
+</html>
