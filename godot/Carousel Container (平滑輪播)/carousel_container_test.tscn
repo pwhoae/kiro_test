@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://xteqkm5ck1gd"]
+
+[ext_resource type="Script" uid="uid://cok7vspjol2qn" path="res://1通用/gdscript/CarouselContainer_test.gd" id="1_18atd"]
+[ext_resource type="PackedScene" uid="uid://cm8f5570uk7v" path="res://_你在玩火/scene/carousel_container.tscn" id="2_i7ck1"]
+
+[node name="CarouselContainer_test" type="Node2D" unique_id=287042038]
+script = ExtResource("1_18atd")
+
+[node name="CarouselContainer" parent="." unique_id=1557814046 instance=ExtResource("2_i7ck1")]
+position = Vector2(313, 74)
+
+[node name="left" type="Button" parent="." unique_id=575254177]
+offset_left = 359.0
+offset_top = 331.0
+offset_right = 557.0
+offset_bottom = 434.0
+text = "left"
+
+[node name="right" type="Button" parent="." unique_id=1500624441]
+offset_left = 689.0
+offset_top = 324.0
+offset_right = 887.0
+offset_bottom = 427.0
+text = "right"
+
+[node name="Label" type="Label" parent="." unique_id=577495114]
+offset_right = 340.0
+offset_bottom = 74.0
+theme_override_font_sizes/font_size = 64
+text = "remember export control"
+
+[connection signal="pressed" from="left" to="." method="_on_left_pressed"]
+[connection signal="pressed" from="right" to="." method="_on_right_pressed"]
