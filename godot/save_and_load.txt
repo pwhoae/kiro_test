@@ -1,0 +1,48 @@
+【【Godot干货】优雅地保存任何数据！基于Resource类的存档系统】 https://www.bilibili.com/video/BV1TEmAYLEsM/?share_source=copy_web
+```gdscript
+extends Resource
+class_name SceneData
+
+@export var player_position : Vector2
+@export var is_facing_right : bool
+
+@export var box_array : Array[PackedScene]
+```
+```gdscript
+extends CanvasLayer
+
+@export var player : Node2D
+
+func _save() -> void:
+    var data = SceneData.new()
+    data.player_position = player.global_position
+    data.is_facing_left = player.get_child(0).flip_h
+
+    var boxes = get_tree().get_nodes_in_group("Box")
+    for box in boxes:
+        var box_scene = PackedScene.new()
+        box_scene.pack(box)
+        data.box_array.append(box_scene)
+
+    ResourceSaver.save(data, "user://scene_data.tres")
+    print("saved!")
+
+func _load() -> void:
+    var data = ResourceLoader.load("user://scene_data.tres") as SceneData
+    player.global_position = data.player_position
+    player.get_child(0).flip_h = data.is_facing_left
+
+    for box in get_tree().get_nodes_in_group("Box"):
+        box.queue_free()
+
+    for box in data.box_array:
+        var box_node = box.instantiate()
+        get_tree().current_scene.add_child(box_node)
+        box_node.freeze = true
+
+    await get_tree().create_timer(0.1).timeout
+    for box in get_tree().get_nodes_in_group("Box"):
+        box.freeze = false
+
+    print("loaded!")
+```
