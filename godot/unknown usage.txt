@@ -1,0 +1,6 @@
+direction_to
+遊戲:Player/Enemy/關卡/camera
+奇怪功能
+	刮刮樂
+	Carousel Container (平滑輪播)
+	
