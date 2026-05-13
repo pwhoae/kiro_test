@@ -1,0 +1,10 @@
+[gd_resource type="Resource" format=3 uid="uid://3miuc6jn6pu0"]
+
+[ext_resource type="Script" uid="uid://b58wmldoluvd3" path="res://1通用/技能状态栏/skill_status.gd" id="1_rtrsx"]
+[ext_resource type="Texture2D" uid="uid://c0xw3cn7nmui7" path="res://1通用/存檔/images/Idle.png" id="2_mikjv"]
+
+[resource]
+script = ExtResource("1_rtrsx")
+skill_id = "skill1"
+skill_name = "test_skill1"
+skill_icon = ExtResource("2_mikjv")

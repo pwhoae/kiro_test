@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://deefse1haax43"]
+
+[ext_resource type="Script" uid="uid://bt54hc4kp4adf" path="res://1通用/技能状态栏/skill_manager.gd" id="1_1vqbq"]
+
+[node name="skill_manager" type="Node2D" unique_id=13442825]
+script = ExtResource("1_1vqbq")

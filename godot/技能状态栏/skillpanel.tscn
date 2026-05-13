@@ -1,0 +1,35 @@
+[gd_scene format=3 uid="uid://cmxis8q5dro77"]
+
+[ext_resource type="Script" uid="uid://bwqsx2osy2rs3" path="res://1通用/技能状态栏/skillpanel.gd" id="1_pgpa2"]
+[ext_resource type="PackedScene" uid="uid://bkf3w6s38e4kw" path="res://1通用/技能状态栏/20260513slot.tscn" id="2_kqjb7"]
+
+[node name="skillpanel" type="Control" unique_id=409315828]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_pgpa2")
+
+[node name="GridContainer" type="GridContainer" parent="." unique_id=139205076]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+columns = 4
+
+[node name="slot" parent="GridContainer" unique_id=718155531 instance=ExtResource("2_kqjb7")]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+
+[node name="slot2" parent="GridContainer" unique_id=314848380 instance=ExtResource("2_kqjb7")]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+
+[node name="slot3" parent="GridContainer" unique_id=477411403 instance=ExtResource("2_kqjb7")]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+
+[node name="slot4" parent="GridContainer" unique_id=100759397 instance=ExtResource("2_kqjb7")]
+layout_mode = 2
