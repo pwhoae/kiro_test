@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://deimae7hrp5se"]
+
+[ext_resource type="Script" uid="uid://cu7dho15807ol" path="res://1通用/技能状态栏/20260513_testscene.gd" id="1_pexf1"]
+
+[node name="TESTSCENE" type="Control" unique_id=2139578456]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_pexf1")
+
+[node name="Skill_name" type="Label" parent="." unique_id=1458167691]
+layout_mode = 0
+offset_left = 95.0
+offset_top = 42.0
+offset_right = 286.0
+offset_bottom = 144.0
+text = "Skill_name"
+
+[node name="Skill_key" type="Label" parent="." unique_id=1929617104]
+layout_mode = 0
+offset_left = 94.0
+offset_top = 85.0
+offset_right = 280.0
+offset_bottom = 199.0
+text = "Skill_key
+"
