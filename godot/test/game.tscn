@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://c3xh8vssn41x5"]
+
+[ext_resource type="Script" uid="uid://g85cbik60lb0" path="res://test/generator.gd" id="1_y56xk"]
+[ext_resource type="PackedScene" uid="uid://djxjg4w73scmm" path="res://test/enemy.tscn" id="2_84nrc"]
+[ext_resource type="PackedScene" uid="uid://073v2brjn17a" path="res://test/player.tscn" id="3_84nrc"]
+
+[node name="Node2D" type="Node2D" unique_id=685797707]
+
+[node name="generator" type="Node2D" parent="." unique_id=275175442]
+position = Vector2(314, 27)
+script = ExtResource("1_y56xk")
+enemy_scene = ExtResource("2_84nrc")
+
+[node name="Marker2D" type="Marker2D" parent="generator" unique_id=1231229024]
+position = Vector2(-416, 46)
+
+[node name="Marker2D2" type="Marker2D" parent="generator" unique_id=1129670179]
+position = Vector2(953, 56)
+
+[node name="Player" parent="." unique_id=8111366 instance=ExtResource("3_84nrc")]
+position = Vector2(589, 480)
