@@ -1,0 +1,176 @@
+Card_UI.gd
+```gdscript
+class_name CardUI
+extends Control
+
+signal reparent_requested(which_card_ui: CardUI)
+
+@onready var color: ColorRect = $Color
+@onready var state: Label = $State
+@onready var card_state_machine: CardStateMachine = $CardStateMachine as CardStateMachine
+
+func _ready() -> void:
+    card_state_machine.init(self)
+
+func _input(event: InputEvent) -> void:
+    card_state_machine.on_input(event)
+
+func _on_gui_input(event: InputEvent) -> void:
+    card_state_machine.on_gui_input(event)
+```
+
+Card_State.gd
+```gdscript
+extends Node
+
+enum State {BASE, CLICKED, DRAGGING, AIMING, RELEASED}
+
+signal transition_requested(from: CardState, to: State)
+
+@export var state: State
+
+var card_ui: CardUI
+
+func enter() -> void:
+    pass
+
+func exit() -> void:
+    pass
+
+func on_input(_event: InputEvent) -> void:
+    pass
+
+func on_gui_input(_event: InputEvent) -> void:
+    pass
+
+func on_mouse_entered() -> void:
+    pass
+
+func on_mouse_exited() -> void:
+    pass
+```
+
+Card_State_Machine.gd
+```gdscript
+class_name CardStateMachine
+extends Node
+
+@export var initial_state: CardState
+
+var current_state: CardState
+var states := {}
+
+
+func init(card: CardUI) -> void:
+    for child in get_children():
+        if child is CardState:
+            states[child.state] = child
+            child.transition_requested.connect(_on_transition_requested)
+            child.card_ui = card
+
+if initial_state:
+    initial_state.enter()
+    current_state = initial_state
+
+func on_input(event: InputEvent) -> void:
+    if current_state:
+        current_state.on_input(event)
+
+func on_gui_input(event: InputEvent) -> void:
+    if current_state:
+        current_state.on_gui_input(event)
+
+func on_mouse_entered() -> void:
+    if current_state:
+        current_state.on_mouse_entered()
+
+func on_mouse_exited() -> void:
+    if current_state:
+        current_state.on_mouse_exited()
+
+
+func _on_transition_requested(from: CardState, to: CardState.State) -> void:
+	if from != current_state:
+		return
+	
+	var new_state: CardState = states[to]
+	if not new_state:
+		return
+		
+	if current_state:
+		current_state.exit()
+		
+	new_state.enter()
+	current_state = new_state
+'''
+
+BASE
+
+```gdscript
+extends CardState
+
+
+func enter() -> void:
+    if not card_ui.is_node_ready():
+        await card_ui.ready
+        
+    card_ui.reparent_requested.emit(card_ui)
+    card_ui.color.color = Color.WEB_GREEN
+    card_ui.state.text = "BASE"
+    card_ui.pivot_offset = Vector2.ZERO
+
+
+func on_gui_input(event: InputEvent) -> void:
+    if event.is_action_pressed("left_mouse"):
+        card_ui.pivot_offset = card_ui.get_global_mouse_position() - card_ui.global_position
+        transition_requested.emit(self, CardState.State.CLICKED)
+```
+
+BASE_state
+```gdscript
+extends CardState
+
+func enter() -> void:
+    card_ui.color.color = Color.ORANGE
+    card_ui.state.text = "CLICKED"
+    card_ui.drop_point_detector.monitoring = true
+
+func on_input(event: InputEvent) -> void:
+    if event is InputEventMouseMotion:
+        transition_requested.emit(self, CardState.State.DRAGGING)
+```
+
+DRAGGING_state
+```gdscript
+extends CardState
+
+func enter() -> void:
+    var ui_layer := get_tree().get_first_node_in_group("ui_layer")
+    if ui_layer:
+        card_ui.reparent(ui_layer)
+
+    card_ui.color.color = Color.NAVY_BLUE
+    card_ui.state.text = "DRAGGING"
+
+func on_input(event: InputEvent) -> void:
+    var mouse_motion := event is InputEventMouseMotion
+    var cancel = event.is_action_pressed("right_mouse")
+    var confirm = event.is_action_released("left_mouse") or event.is_action_pressed("left_mouse")
+
+    if mouse_motion:
+        card_ui.global_position = card_ui.get_global_mouse_position() - card_ui.pivot_offset
+
+    if cancel:
+        transition_requested.emit(self, CardState.State.BASE)
+    elif confirm:
+        get_viewport().set_input_as_handled()
+        transition_requested.emit(self, CardState.State.RELEASED)
+```
+RELEASED_state
+```gdscript
+extends CardState
+
+func enter() -> void:
+	card_ui.color.color = Color.DARK_VIOLET
+	card_ui.state.text = "RELEASED"
+```
