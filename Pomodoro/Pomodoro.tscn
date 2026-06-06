@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://ddodhh0h27cyx"]
+
+[ext_resource type="Script" uid="uid://c5831f3b68j42" path="res://Pomodoro/Pomodoro.gd" id="1_ylfui"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_vvqu2"]
+
+[node name="Node2D" type="Node2D" unique_id=157298988]
+
+[node name="Control" type="Control" parent="." unique_id=358888812]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_ylfui")
+
+[node name="Label" type="Label" parent="Control" unique_id=1067962394]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+
+[node name="Button" type="Button" parent="Control" unique_id=1166991308]
+layout_mode = 0
+offset_right = 8.0
+offset_bottom = 8.0
+
+[node name="Button2" type="Button" parent="Control" unique_id=311431527]
+layout_mode = 0
+offset_right = 8.0
+offset_bottom = 8.0
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=564305415]
+sprite_frames = SubResource("SpriteFrames_vvqu2")
+
+[node name="Timer" type="Timer" parent="." unique_id=1459314846]
+
+[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=774865912]
