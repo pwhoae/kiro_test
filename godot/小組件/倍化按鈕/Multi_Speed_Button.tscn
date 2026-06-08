@@ -1,0 +1,51 @@
+[gd_scene format=3 uid="uid://mvwblbvyyp82"]
+
+[ext_resource type="Script" uid="uid://bg8ucbsvu7ty4" path="res://倍化按鈕/multi_speed_button.gd" id="1_04co8"]
+[ext_resource type="Texture2D" uid="uid://dffi44t5o7knl" path="res://倍化按鈕/images.JPG" id="1_igey4"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_04co8"]
+
+[node name="TextureButton" type="TextureButton" unique_id=1511053655 node_paths=PackedStringArray("anim", "label", "speed_button")]
+custom_minimum_size = Vector2(200, 100)
+offset_right = 339.0
+offset_bottom = 100.0
+ignore_texture_size = true
+script = ExtResource("1_04co8")
+anim = NodePath("AnimatedSprite2D")
+label = NodePath("RichTextLabel")
+speed_button = NodePath(".")
+
+[node name="Panel" type="Panel" parent="." unique_id=1505339975]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=1874220535]
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 0
+offset_right = 100.0
+offset_bottom = 100.0
+texture = ExtResource("1_igey4")
+
+[node name="RichTextLabel" type="RichTextLabel" parent="." unique_id=564740581]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 101.0
+offset_top = 2.0
+offset_right = 37.0
+offset_bottom = 2.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/normal_font_size = 48
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1816248190]
+sprite_frames = SubResource("SpriteFrames_04co8")
+
+[connection signal="pressed" from="." to="." method="_on_pressed"]
